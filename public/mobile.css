@@ -50,3 +50,4 @@
 @media(max-width:360px){.custom-hero{min-height:190px}.custom-hero-copy h1{font-size:19px}.custom-hero-image{width:34%}}
 
 .builder-selected{outline:2px solid #8d70f1;outline-offset:-2px;box-shadow:0 0 0 3px #8d70f144}
+.custom-text p{font-size:inherit}.custom-text h2{font-size:1.4em}.custom-text p,.custom-text h2{overflow-wrap:anywhere}
