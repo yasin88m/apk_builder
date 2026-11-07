@@ -55,7 +55,7 @@ export async function buildAndroidAPK(config,assets,identity,{versionCode=Math.f
  const runtime=JSON.parse(assets['android-runtime.json']||'null');if(!runtime?.apk)throw Object.assign(new Error('موتور ساخت اندروید هنوز آماده نشده است.'),{status:503});const base=from64(runtime.apk);const actual=Array.from(await sha256(base),b=>b.toString(16).padStart(2,'0')).join('');if(actual!==runtime.sha256)throw new Error('Android runtime checksum failed');
  const c=normalize(config),files=zipEntries(base);files['AndroidManifest.xml']=patchManifest(files['AndroidManifest.xml'],{packageName:identity.packageName,label:(c.appName||c.name).slice(0,80),versionCode,versionName:'1.'+versionCode});
  for(const path of Object.keys(files))if(path.startsWith('META-INF/'))delete files[path];
- files['assets/index.html']=nativeHTML(c);for(const file of ['font.css','mobile.css','mobile.js','model.js']){const source=file==='mobile.js'?(runtime.mobileJS||assets[file]):file==='model.js'?(runtime.modelJS||assets[file]):assets[file];files['assets/'+file]=file==='mobile.js'?source.replaceAll('target="_blank"','target="_self"'):source;}
+ files['assets/index.html']=nativeHTML(c);for(const file of ['font.css','mobile.css','mobile.js','model.js']){const source=assets[file]|| (file==='mobile.js'?runtime.mobileJS:file==='model.js'?runtime.modelJS:null);files['assets/'+file]=file==='mobile.js'?source.replaceAll('target="_blank"','target="_self"'):source;}
  for(const path of Object.keys(files))if(/^res\/drawable[^/]*\/icon\.png$/.test(path))files[path]=(c.appIcon||c.logo).startsWith('data:image/png;base64,')?from64((c.appIcon||c.logo).split(',')[1]):appIcon(512,c.color);
  return signAndroidAPK(zipFiles(files,{align:4}),identity);
 }
