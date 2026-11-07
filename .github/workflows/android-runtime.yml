@@ -14,6 +14,9 @@ on:
       - 'scripts/test-android-device.sh'
       - '.github/workflows/android-runtime.yml'
   workflow_dispatch:
+concurrency:
+  group: android-runtime-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:
@@ -43,10 +46,19 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          # Never save a runtime built from inputs that have since changed.
+          if ! git diff --quiet HEAD origin/main -- android public/model.js public/mobile.js src/android.mjs src/zip.mjs scripts/build-native.sh; then
+            echo "Source changed during build; leaving the newer run to save its runtime."
+            exit 0
+          fi
+          cp public/android-runtime.json /tmp/verified-android-runtime.json
+          git restore public/android-runtime.json
+          git checkout -B runtime-update origin/main
+          cp /tmp/verified-android-runtime.json public/android-runtime.json
           git add public/android-runtime.json
           git diff --cached --quiet && exit 0
           git commit -m "Build compiled Android runtime [skip ci]"
-          git pull --rebase origin main
           git push origin HEAD:main
       - uses: actions/upload-artifact@v4
         if: always()
