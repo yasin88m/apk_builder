@@ -8,8 +8,8 @@ adb logcat -c
 adb shell am start -W -n "$package_name/com.appbuilder.runtime.MainActivity"
 ready=0
 for attempt in $(seq 1 12); do
- adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
- adb pull /sdcard/window.xml .native-build/device-ui.xml >/dev/null 2>&1 || true
+ timeout 15s adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
+ timeout 10s adb pull /sdcard/window.xml .native-build/device-ui.xml >/dev/null 2>&1 || true
  if grep -q 'منتخبِ مجموعه' .native-build/device-ui.xml; then ready=1; break; fi
  sleep 2
 done
@@ -26,8 +26,8 @@ for template in servly eduboss sport; do
  ready=0
  case "$template" in servly) marker='چه کمکی نیاز داری؟';; eduboss) marker='دوره‌های منتخب';; sport) marker='برای تمرین بعدی تو';; esac
  for attempt in $(seq 1 12); do
-  adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
-  adb pull /sdcard/window.xml ".native-build/$template-ui.xml" >/dev/null 2>&1 || true
+  timeout 15s adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
+  timeout 10s adb pull /sdcard/window.xml ".native-build/$template-ui.xml" >/dev/null 2>&1 || true
   if grep -q "$marker" ".native-build/$template-ui.xml"; then ready=1; break; fi
   sleep 2
  done

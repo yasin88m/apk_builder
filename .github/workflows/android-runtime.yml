@@ -35,13 +35,14 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Install APK, render offline and test update
+        timeout-minutes: 8
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: bash scripts/test-android-device.sh
+          script: timeout 240s bash scripts/test-android-device.sh
       - name: Save compiled runtime
         run: |
           git config user.name 'github-actions[bot]'
