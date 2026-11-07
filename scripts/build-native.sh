@@ -2,7 +2,7 @@
 set -euo pipefail
 sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 if [[ -z "$sdk_root" ]]; then echo "Android SDK is required" >&2; exit 1; fi
-sdkmanager "platforms;android-35" "build-tools;35.0.0" >/dev/null
+"$sdk_root/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0" >/dev/null
 build_tools="$sdk_root/build-tools/35.0.0"
 android_jar="$sdk_root/platforms/android-35/android.jar"
 mkdir -p .native-build/classes .native-build/dex .native-build/resources
@@ -26,6 +26,7 @@ PY
 if [[ -f scripts/sign-sample.mjs ]]; then
  node scripts/sign-sample.mjs
  "$build_tools/apksigner" verify --verbose --min-sdk-version 24 .native-build/sample.apk
+ "$build_tools/apksigner" verify --verbose --min-sdk-version 24 .native-build/sample-updated.apk
  "$build_tools/aapt2" dump badging .native-build/sample.apk | head -15
  "$build_tools/zipalign" -c 4 .native-build/sample.apk
 fi
