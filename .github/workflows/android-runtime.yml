@@ -55,3 +55,4 @@ jobs:
             .native-build/sample-screen.png
             .native-build/device-ui.xml
             .native-build/device-log.txt
+            .native-build/apksigner.jar

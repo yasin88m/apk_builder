@@ -10,7 +10,7 @@ ready=0
 for attempt in $(seq 1 12); do
  adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
  adb pull /sdcard/window.xml .native-build/device-ui.xml >/dev/null 2>&1 || true
- if rg -q 'نمونه اپلیکیشن اندروید' .native-build/device-ui.xml; then ready=1; break; fi
+ if grep -q 'پیشنهادهای ما' .native-build/device-ui.xml; then ready=1; break; fi
  sleep 2
 done
 adb exec-out screencap -p > .native-build/sample-screen.png

@@ -14,6 +14,8 @@ JS
 "$build_tools/aapt2" link -o .native-build/linked.apk -I "$android_jar" --manifest android/AndroidManifest.xml --min-sdk-version 24 --target-sdk-version 34 .native-build/compiled.zip
 javac -source 8 -target 8 -classpath "$android_jar" -d .native-build/classes android/src/com/appbuilder/runtime/MainActivity.java
 "$build_tools/d8" --lib "$android_jar" --min-api 24 --output .native-build/dex .native-build/classes/com/appbuilder/runtime/*.class
+npx --yes esbuild@0.25.10 public/mobile.js --format=esm --target=chrome61 --outfile=.native-build/mobile.js
+npx --yes esbuild@0.25.10 public/model.js --format=esm --target=chrome61 --outfile=.native-build/model.js
 python3 - <<'PY'
 import zipfile,hashlib,base64,json
 from pathlib import Path
@@ -21,7 +23,7 @@ with zipfile.ZipFile('.native-build/linked.apk') as source,zipfile.ZipFile('.nat
  for name in source.namelist(): target.writestr(name,source.read(name))
  target.write('.native-build/dex/classes.dex','classes.dex')
 b=Path('.native-build/runtime.apk').read_bytes()
-Path('public/android-runtime.json').write_text(json.dumps({'format':1,'minSdk':24,'targetSdk':34,'sha256':hashlib.sha256(b).hexdigest(),'apk':base64.b64encode(b).decode()}))
+Path('public/android-runtime.json').write_text(json.dumps({'format':1,'minSdk':24,'targetSdk':34,'sha256':hashlib.sha256(b).hexdigest(),'apk':base64.b64encode(b).decode(),'mobileJS':Path('.native-build/mobile.js').read_text(),'modelJS':Path('.native-build/model.js').read_text()}))
 PY
 if [[ -f scripts/sign-sample.mjs ]]; then
  node scripts/sign-sample.mjs
@@ -30,3 +32,5 @@ if [[ -f scripts/sign-sample.mjs ]]; then
  "$build_tools/aapt2" dump badging .native-build/sample.apk | head -15
  "$build_tools/zipalign" -c 4 .native-build/sample.apk
 fi
+
+cp "$build_tools/lib/apksigner.jar" .native-build/apksigner.jar
