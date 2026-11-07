@@ -1,0 +1,10 @@
+{
+  "script_name": "apk-builder",
+  "account_id": "f1553f84337d1e1701874f9fde3684b2",
+  "compatibility_date": "2026-11-07",
+  "main_module": "index.js",
+  "bindings": [{"type":"d1","name":"DB","database_id":"b5c68d38-b82b-4522-b8dc-4e8db684e938"}],
+  "observability": {"enabled":true,"logs":{"enabled":true,"invocation_logs":true,"head_sampling_rate":0.1},"traces":{"enabled":true,"head_sampling_rate":0.01}},
+  "workers_dev": true,
+  "public_url": "https://apk-builder.mohammadyasinmisaqpoor.workers.dev"
+}
