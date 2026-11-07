@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - 'android/**'
+      - 'public/mobile.js'
+      - 'public/mobile.css'
+      - 'public/model.js'
       - 'src/android*.mjs'
       - 'src/zip.mjs'
       - 'scripts/build-native.sh'
