@@ -153,7 +153,11 @@ export async function openDesigner({root,user,lang='fa'}){
   const attr=key.startsWith('global:')?'data-global="'+key.slice(7)+'"':'data-prop="'+key+'"';return '<label class="ve-field"><span>'+label+'</span><input type="'+type+'" '+attr+' value="'+esc(value??'')+'" '+attrs+'></label>';
  }
  function area(label,key,value){
-  return '<label class="ve-field"><span>'+label+'</span><textarea data-prop="'+key+'" rows="4">'+esc(value??'')+'</textarea></label>';
+  const attr=key.startsWith('global:')?'data-global="'+key.slice(7)+'"':'data-prop="'+key+'"';return '<label class="ve-field"><span>'+label+'</span><textarea '+attr+' rows="4">'+esc(value??'')+'</textarea></label>';
+ }
+ function itemField(index,field,label,value,multiline=false){
+  if(multiline)return '<label class="ve-field ve-item-field"><span>'+label+'</span><textarea rows="3" data-item-index="'+index+'" data-item-field="'+field+'">'+esc(value??'')+'</textarea></label>';
+  return '<label class="ve-field ve-item-field"><span>'+label+'</span><input type="text" data-item-index="'+index+'" data-item-field="'+field+'" value="'+esc(value??'')+'"></label>';
  }
  function select(label,key,value,options){
   const attr=key.startsWith('global:')?'data-global="'+key.slice(7)+'"':'data-prop="'+key+'"';return '<label class="ve-field"><span>'+label+'</span><select '+attr+'>'+options.map(o=>'<option value="'+o[0]+'" '+(value===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>';
@@ -167,6 +171,7 @@ export async function openDesigner({root,user,lang='fa'}){
   if(inspectorTab==='page'){
    return '<div class="ve-group"><h3>هویت اپلیکیشن</h3>'+input('نام کسب‌وکار','global:name',config.name)+input('نام نمایش روی گوشی','global:appName',config.appName)+upload('لوگوی کسب‌وکار','global:logo',config.logo)+upload('آیکون نصب اندروید','global:appIcon',config.appIcon)+
     '<p class="ve-help">لوگو داخل اپ نمایش داده می‌شود؛ آیکون نصب در صفحه اصلی گوشی قرار می‌گیرد.</p></div>'+
+    '<div class="ve-group"><h3>اطلاعات کسب‌وکار</h3>'+input('شعار کوتاه','global:tagline',config.tagline)+area('معرفی کوتاه','global:description',config.description)+area('درباره کسب‌وکار','global:about',config.about)+input('شماره تماس','global:phone',config.phone,'tel')+input('ایمیل','global:email',config.email,'email')+input('آدرس','global:address',config.address)+input('وب‌سایت','global:website',config.website,'url')+input('اینستاگرام','global:instagram',config.instagram,'url')+input('واتساپ','global:whatsapp',config.whatsapp,'url')+input('تلگرام','global:telegram',config.telegram,'url')+'</div>'+
     '<div class="ve-group"><h3>رنگ‌بندی کلی</h3>'+input('رنگ اصلی','global:color',config.color,'color')+input('پس‌زمینه','global:background',config.background,'color')+input('رنگ نوشته','global:ink',config.ink,'color')+
     '<div class="ve-palette-grid">'+palettes.map((p,i)=>'<button data-palette="'+i+'" title="'+p[0]+'"><i style="background:'+p[1]+'"></i><i style="background:'+p[2]+'"></i><i style="background:'+p[3]+'"></i></button>').join('')+'</div></div>'+
     '<div class="ve-group"><h3>قالب پایه</h3>'+select('نوع قالب','global:template',config.template,templates.map(x=>[x.id,x.name]))+
@@ -179,7 +184,7 @@ export async function openDesigner({root,user,lang='fa'}){
    if(['hero','about','contact','text','image','button','logo','featured'].includes(b.type))html+=area('متن و توضیحات','text',b.text);
    if(['hero','contact','button'].includes(b.type))html+=input('متن دکمه','buttonText',b.buttonText);
    if(['hero','image','logo'].includes(b.type))html+=upload('تصویر المان','image',b.image);
-   if(b.type==='featured')html+='<div class="ve-help">کارت‌های محصولات و خدمات از بخش محتوای اصلی پروژه خوانده می‌شوند.</div>';
+   if(b.type==='featured')html+='<div class="ve-group ve-items-manager"><div class="ve-items-head"><h3>محتوای محصولات و خدمات</h3><button class="ve-add-item" data-add-item>＋ افزودن</button></div><p class="ve-help">این موارد مستقیماً در کارت‌های اپلیکیشن نمایش داده می‌شوند.</p>'+(config.items||[]).map((item,i)=>'<div class="ve-item-card"><div class="ve-item-card-head"><b>مورد '+(i+1)+'</b><button data-delete-item="'+i+'" class="ve-item-remove">حذف</button></div>'+itemField(i,'title','نام محصول / خدمت',item.title)+itemField(i,'category','دسته‌بندی',item.category)+itemField(i,'price','قیمت یا توضیح قیمت',item.price)+itemField(i,'description','توضیحات',item.description,true)+'<label class="ve-upload ve-item-upload"><input type="file" accept="image/png,image/jpeg,image/webp" data-item-image="'+i+'">＋ تغییر تصویر</label>'+(item.image?'<div class="ve-image-preview"><img src="'+esc(item.image)+'" alt=""><button data-clear-item-image="'+i+'">حذف تصویر</button></div>':'')+'</div>').join('')+'</div>';
    if(b.type==='gallery')html+='<div class="ve-help">تصاویر گالری را در بخش محتوای اصلی اضافه کنید.</div>';
    return html;
   }
@@ -239,18 +244,23 @@ export async function openDesigner({root,user,lang='fa'}){
   const el=e.target;
   if(el.dataset.prop){checkpoint();setProp(el.dataset.prop,el.type==='checkbox'?el.checked:el.value);renderLayers();}
   if(el.dataset.global){checkpoint();applyGlobal(el.dataset.global,el.value);markDirty();}
+  if(el.dataset.itemIndex!==undefined){const item=config.items?.[Number(el.dataset.itemIndex)];if(item){checkpoint();item[el.dataset.itemField]=String(el.value).slice(0,el.dataset.itemField==='description'?3000:150);markDirty();}}
  });
  root.addEventListener('change',async e=>{
   const el=e.target;
   try{
    if(el.dataset.image){const data=await fileData(el.files[0]);checkpoint();const b=selected();if(b)b[el.dataset.image]=data;markDirty();renderInspector();}
    if(el.dataset.globalImage){const key=el.dataset.globalImage,data=await fileData(el.files[0],key==='appIcon'?{format:'image/png',square:true}:{});checkpoint();config[key]=data;markDirty();renderInspector();}
+   if(el.dataset.itemImage!==undefined){const data=await fileData(el.files[0]);const item=config.items?.[Number(el.dataset.itemImage)];if(item){checkpoint();item.image=data;markDirty();renderInspector();}}
   }catch(err){notify(err.message);}
  });
  root.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
   try{
    if(b.dataset.add){addBlock(b.dataset.add);mobilePanel='';applyMobilePanel();}
+   else if(b.hasAttribute('data-add-item')){if((config.items||[]).length>=30)throw new Error('حداکثر ۳۰ محصول یا خدمت می‌توانید اضافه کنید.');checkpoint();config.items=config.items||[];config.items.push({id:makeId(),title:'محصول یا خدمت جدید',description:'توضیحات محصول یا خدمت',price:'تماس بگیرید',category:'عمومی',image:'',art:'house'});markDirty();renderInspector();}
+   else if(b.dataset.deleteItem!==undefined){checkpoint();config.items.splice(Number(b.dataset.deleteItem),1);markDirty();renderInspector();}
+   else if(b.dataset.clearItemImage!==undefined){checkpoint();const item=config.items?.[Number(b.dataset.clearItemImage)];if(item)item.image='';markDirty();renderInspector();}
    else if(b.dataset.select){selectBlock(b.dataset.select);mobilePanel='inspector';applyMobilePanel();}
    else if(b.dataset.inspectorTab){inspectorTab=b.dataset.inspectorTab;renderInspector();}
    else if(b.dataset.mobilePanel){mobilePanel=mobilePanel===b.dataset.mobilePanel?'':b.dataset.mobilePanel;applyMobilePanel();}
