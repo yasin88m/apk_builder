@@ -20,7 +20,7 @@
 .custom-block h2{font-size:16px;margin:0 0 9px;font-weight:800}
 .custom-block h3{font-size:13px;margin:8px 0}
 .custom-block p{font-size:11px;line-height:2;margin:5px 0 12px;white-space:pre-line}
-.custom-hero{min-height:225px;display:flex;align-items:center;gap:8px;color:#fff!important;position:relative;isolation:isolate}
+.custom-hero{min-height:225px;display:flex;align-items:center;gap:8px;color:#fff;position:relative;isolation:isolate}
 .custom-hero-copy{position:relative;z-index:2;flex:1;min-width:0}
 .custom-hero-copy small{font-size:9px;opacity:.8}
 .custom-hero-copy h1{font-size:22px;line-height:1.65;margin:5px 0 8px;font-weight:900}
@@ -48,3 +48,5 @@
 .custom-divider hr{border:0;border-top:1px solid #8885;margin:0}
 .custom-spacer{display:block;pointer-events:none}
 @media(max-width:360px){.custom-hero{min-height:190px}.custom-hero-copy h1{font-size:19px}.custom-hero-image{width:34%}}
+
+.builder-selected{outline:2px solid #8d70f1;outline-offset:-2px;box-shadow:0 0 0 3px #8d70f144}
