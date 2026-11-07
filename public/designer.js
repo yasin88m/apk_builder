@@ -120,6 +120,8 @@ export async function openDesigner({root,user,lang='fa'}){
       '<button class="ve-tool ve-mobile-open" data-mobile-panel="widgets">المان‌ها</button>'+
       '<button class="ve-tool ve-mobile-open" data-mobile-panel="inspector">تنظیمات</button>'+
       '<button class="ve-action secondary" data-save>ذخیره</button>'+
+      '<button class="ve-action secondary" data-publish>انتشار وب‌اپ ↗</button>'+
+      '<button class="ve-action secondary ve-export-web" data-export-web>دانلود ZIP</button>'+
       '<button class="ve-action primary" data-build>ساخت APK ↓</button>'+
      '</div>'+
     '</header>'+
@@ -225,6 +227,30 @@ export async function openDesigner({root,user,lang='fa'}){
    return true;
   }finally{saving=false;if(button){button.disabled=false;button.textContent='ذخیره';}}
  }
+ function showPublishDialog(url){
+  document.querySelector('.ve-publish-backdrop')?.remove();
+  const layer=document.createElement('div');layer.className='ve-publish-backdrop';
+  layer.innerHTML='<div class="ve-publish-dialog" role="dialog" aria-modal="true" aria-labelledby="ve-publish-title"><button class="ve-publish-close" data-close-publish aria-label="بستن">×</button><div class="ve-publish-symbol">↗</div><h2 id="ve-publish-title">وب‌اپلیکیشن منتشر شد</h2><p>لینک زیر را می‌توانی با دیگران به اشتراک بگذاری.</p><div class="ve-publish-url" dir="ltr">'+esc(url)+'</div><div class="ve-publish-actions"><button class="ve-action primary" data-copy-publish>کپی لینک</button><a class="ve-action secondary" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">مشاهده وب‌اپ ↗</a></div><button class="ve-unpublish-link" data-unpublish>لغو انتشار وب‌اپ</button></div>';
+  document.querySelector('.visual-editor')?.append(layer);
+ }
+ async function publish(){
+  if(!await save())return;
+  const button=document.querySelector('[data-publish]');if(button){button.disabled=true;button.textContent='در حال انتشار…';}
+  try{const data=await api('/api/apps/'+currentApp.id+'/publish',{method:'POST',body:'{}'});currentApp=data.app;showPublishDialog(data.url);const state=document.querySelector('.ve-save-state');if(state)state.textContent='وب‌اپ منتشر شده';}
+  finally{if(button){button.disabled=false;button.textContent='انتشار وب‌اپ ↗';}}
+ }
+ async function exportWeb(){
+  if(!await save())return;
+  const button=document.querySelector('[data-export-web]');if(button){button.disabled=true;button.textContent='در حال آماده‌سازی…';}
+  try{const response=await fetch('/api/apps/'+currentApp.id+'/export',{method:'GET',credentials:'same-origin'});if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'ساخت فایل وب‌اپ ناموفق بود.');}
+   const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=(config.appName||config.name||'web-app').replace(/[\\/:*?"<>|]/g,'')+'.zip';a.click();setTimeout(()=>URL.revokeObjectURL(url),20000);notify('فایل وب‌اپ آماده دانلود است.');
+  }finally{if(button){button.disabled=false;button.textContent='دانلود ZIP';}}
+ }
+ async function unpublish(){
+  if(!currentApp?.slug)return;
+  if(!confirm('لینک عمومی این وب‌اپ غیرفعال شود؟'))return;
+  const data=await api('/api/apps/'+currentApp.id+'/unpublish',{method:'POST',body:'{}'});currentApp=data.app;document.querySelector('.ve-publish-backdrop')?.remove();notify('انتشار وب‌اپ لغو شد.');
+ }
  async function build(){
   if(!await save())return;
   const button=document.querySelector('[data-build]');if(button){button.disabled=true;button.textContent='در حال ساخت…';}
@@ -288,6 +314,11 @@ export async function openDesigner({root,user,lang='fa'}){
    else if(b.hasAttribute('data-undo')){if(undoStack.length){redoStack.push(clone(config));config=undoStack.pop();selectedId=config.builder.blocks[0]?.id||null;dirty=true;render();refreshHistory();}}
    else if(b.hasAttribute('data-redo')){if(redoStack.length){undoStack.push(clone(config));config=redoStack.pop();selectedId=config.builder.blocks[0]?.id||null;dirty=true;render();refreshHistory();}}
    else if(b.hasAttribute('data-save')){if(await save())notify('پروژه ذخیره شد.');}
+   else if(b.hasAttribute('data-publish')){await publish();}
+   else if(b.hasAttribute('data-export-web')){await exportWeb();}
+   else if(b.hasAttribute('data-copy-publish')){const url=document.querySelector('.ve-publish-url')?.textContent||'';try{await navigator.clipboard.writeText(url);notify('لینک کپی شد.');}catch{prompt('لینک وب‌اپ را کپی کنید:',url);}}
+   else if(b.hasAttribute('data-close-publish')){document.querySelector('.ve-publish-backdrop')?.remove();}
+   else if(b.hasAttribute('data-unpublish')){await unpublish();}
    else if(b.hasAttribute('data-build')){await build();}
    else if(b.hasAttribute('data-back')){location.href=currentApp?'/builder?id='+currentApp.id:'/builder?new=1&template='+config.template;}
   }catch(err){notify(err.message);}
