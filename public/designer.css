@@ -167,3 +167,12 @@ body.designer-open{overflow:hidden}
  .ve-tools [data-build]{font-size:0;padding:0 8px}
  .ve-tools [data-build]::after{content:"APK";font-size:9px}
 }
+
+.ve-canvas-tools{display:flex;align-items:center;gap:4px;padding:9px 12px;background:#1b1d29;border-bottom:1px solid var(--ve-line);overflow-x:auto;flex-shrink:0;scrollbar-width:thin}
+.ve-canvas-tools button{background:#282b3b;border:1px solid transparent;border-radius:7px;min-height:34px;padding:5px 10px;white-space:nowrap;font-size:11px}
+.ve-canvas-tools button:hover,.ve-canvas-tools button.active{background:#9274f52a;border-color:#9274f5;color:#d8c9ff}
+.ve-canvas-tools i{height:24px;width:1px;background:var(--ve-line);margin:0 5px;flex-shrink:0}
+.ve-zoom{display:flex;align-items:center;gap:4px;direction:ltr}.ve-zoom button{background:#292b3a;border-radius:4px;color:#ddd;padding:1px 7px;font:10px/1.8 Tahoma}.ve-zoom small{margin-left:8px;font:9px Vazirmatn,Tahoma}
+.ve-canvas-foot{height:34px;min-height:34px;letter-spacing:0}
+.visual-editor.ve-dragging .ve-device iframe{pointer-events:auto}
+@media(max-width:560px){.ve-canvas-tools{padding:6px;gap:4px}.ve-canvas-tools button{padding:4px 9px;min-height:33px}.ve-canvas-tools button span{display:none}.ve-zoom small{display:none}.ve-device.mobile,.ve-device.tablet,.ve-device.desktop{height:min(740px,calc(100dvh - 235px))}}

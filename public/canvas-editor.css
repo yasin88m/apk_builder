@@ -1,0 +1,17 @@
+.canvas-editing [data-builder-block]{overflow:visible!important;cursor:default;outline-offset:2px;isolation:isolate}
+.canvas-editing [data-builder-block]:hover{outline:1px solid #9b7aff}
+.canvas-editing [data-builder-block].builder-selected{outline:2px solid #8d70f1;z-index:30!important}
+.canvas-actions{position:absolute;top:3px;left:3px;z-index:100;display:none;direction:ltr;gap:2px;background:#252236;color:#fff;padding:3px;border:1px solid #ae92ff;border-radius:8px;box-shadow:0 3px 12px #0003;font:12px Tahoma;user-select:none}
+.builder-selected>.canvas-actions{display:flex}
+.canvas-actions button{width:28px;height:28px;display:grid;place-items:center;border-radius:5px;background:transparent;color:white;font:16px Tahoma;padding:0;touch-action:none}
+.canvas-actions button:hover{background:#8061d9}.canvas-actions [data-canvas-action=delete]:hover{background:#c44161}
+.canvas-actions [data-canvas-action=move],.canvas-actions [data-canvas-action=reorder]{cursor:grab}
+.canvas-resize{display:none;position:absolute;right:-6px;bottom:-6px;width:14px;height:14px;background:white;border:2px solid #8d70f1;z-index:100;border-radius:3px;cursor:ew-resize;touch-action:none;padding:0}
+.builder-selected>.canvas-resize{display:block}
+.canvas-editing [data-editing]{outline:2px dashed #9b7aff;outline-offset:3px;cursor:text!important;min-height:1.5em;white-space:pre-wrap;user-select:text}
+.canvas-editing [data-editing]:focus{outline:2px solid #9b7aff}
+.canvas-dragging{opacity:.7;will-change:left,top,width;user-select:none}
+.canvas-drop-before{border-top:4px solid #8d70f1!important}.canvas-drop-after{border-bottom:4px solid #8d70f1!important}
+[data-canvas-tool=move] [data-builder-block]{cursor:move;touch-action:none}
+[data-canvas-tool=text] [data-builder-block]{cursor:text}
+.canvas-editing .bottomnav{pointer-events:none;opacity:.5}

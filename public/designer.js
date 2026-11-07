@@ -67,7 +67,8 @@ export async function openDesigner({root,user,lang='fa'}){
  const t=(fa,en)=>lang==='en'?en:fa;
  const params=new URLSearchParams(location.search);
  let currentApp=null,config=null,selectedId=null,inspectorTab='content',device='mobile',mobilePanel='',dirty=false,saving=false;
- const undoStack=[],redoStack=[];
+ const undoStack=[],redoStack=[];let clipboard=null,canvasTool='select',zoom=100;
+ const postCanvas=data=>document.getElementById('ve-preview')?.contentWindow?.postMessage(data,location.origin);
  const notify=message=>{const el=document.getElementById('toast');if(el){el.textContent=message;el.classList.add('visible');setTimeout(()=>el.classList.remove('visible'),3500);}else alert(message);};
  async function api(url,options={}){
   const response=await fetch(url,{credentials:'same-origin',...options,headers:{'content-type':'application/json',...(options.headers||{})}});
@@ -99,11 +100,11 @@ export async function openDesigner({root,user,lang='fa'}){
   if(blocks().length>=40){notify('حداکثر ۴۰ المان می‌توانید اضافه کنید.');return;}
   const d=defaults[type]||defaults.text;
   const b=Object.assign({id:makeId(),type,visible:true,bg:'',color:'',align:'right',padding:12,radius:16,fontSize:14},clone(d));
-  checkpoint();blocks().splice(Math.max(0,Math.min(index,blocks().length)),0,b);selectedId=b.id;markDirty();render();
+  checkpoint();blocks().splice(Math.max(0,Math.min(index,blocks().length)),0,b);selectedId=b.id;markDirty();renderInspector();renderLayers();postCanvas({type:'canvas-focus',id:b.id,edit:type==='text'});
  }
  function updatePreview(){
   const frame=document.getElementById('ve-preview');
-  if(frame?.contentWindow){const previewConfig=clone(config);previewConfig.builder.selectedId=selectedId;frame.contentWindow.postMessage({type:'app-preview',config:previewConfig},location.origin);}
+  if(frame?.contentWindow){const previewConfig=clone(config);previewConfig.builder.selectedId=selectedId;frame.contentWindow.postMessage({type:'app-preview',config:previewConfig},location.origin);postCanvas({type:'canvas-tool',tool:canvasTool});}
  }
  function panelButton(name,label){return '<button class="ve-mobile-tab '+(mobilePanel===name?'active':'')+'" data-mobile-panel="'+name+'">'+label+'</button>';}
  function render(){
@@ -136,9 +137,9 @@ export async function openDesigner({root,user,lang='fa'}){
       '<button data-inspector-tab="advanced" class="'+(inspectorTab==='advanced'?'active':'')+'">پیشرفته</button>'+
       '<button data-inspector-tab="page" class="'+(inspectorTab==='page'?'active':'')+'">صفحه</button>'+
      '</div><div class="ve-panel-scroll" id="ve-inspector-body">'+inspectorHTML()+'</div></aside>'+
-     '<main class="ve-stage"><div class="ve-stagebar"><div><span class="ve-live-dot"></span>پیش‌نمایش زنده <small>LIVE CANVAS</small></div><div class="ve-stage-actions"><button data-blank>صفحه خالی</button><button data-add-selected>+ افزودن المان</button></div></div>'+
+     '<main class="ve-stage"><nav class="ve-canvas-tools" aria-label="ابزار طراحی"><button data-canvas-tool="select" class="active" title="انتخاب (V)">↖ <span>انتخاب</span></button><button data-canvas-tool="move" title="جابه‌جایی آزاد">✥ <span>حرکت</span></button><button data-canvas-tool="text" title="ویرایش متن (T)">T <span>متن</span></button><i></i><button data-quick-text>+ متن</button><button data-copy-selected title="کپی Ctrl+C">⧉ <span>کپی</span></button><button data-paste-selected title="چسباندن Ctrl+V">▣ <span>چسباندن</span></button><button data-duplicate-selected title="تکثیر Ctrl+D">⧉+ <span>تکثیر</span></button><button data-delete-selected title="حذف Delete">× <span>حذف</span></button></nav><div class="ve-stagebar"><div><span class="ve-live-dot"></span>پیش‌نمایش زنده <small>LIVE CANVAS</small></div><div class="ve-stage-actions"><button data-blank>صفحه خالی</button><button data-add-selected>+ افزودن المان</button></div></div>'+
       '<div class="ve-canvas" id="ve-canvas"><div class="ve-device '+device+'" id="ve-device"><span class="ve-camera"></span><iframe id="ve-preview" title="پیش‌نمایش اپلیکیشن" src="/preview.html?editing=1&template='+encodeURIComponent(config.template)+'"></iframe></div></div>'+
-      '<div class="ve-canvas-foot"><span>ANDROID APP CANVAS</span><span>'+blocks().filter(b=>b.visible!==false).length+' بخش فعال · '+blocks().length+' المان</span></div></main>'+
+      '<div class="ve-canvas-foot"><div class="ve-zoom"><button data-zoom="-10" aria-label="کوچک‌نمایی">−</button><button data-zoom="reset" id="ve-zoom-value">100%</button><button data-zoom="10" aria-label="بزرگ‌نمایی">+</button><small>دوبار کلیک: نوشتن · ↕ ترتیب · ✥ حرکت آزاد</small></div><span>'+blocks().filter(b=>b.visible!==false).length+' بخش فعال · '+blocks().length+' المان</span></div></main>'+
      '<aside class="ve-panel ve-widgets"><div class="ve-panel-head"><span class="ve-panel-icon">▦</span><div><b>المان‌ها و ساختار</b><small>ELEMENTS & LAYERS</small></div></div>'+
       '<div class="ve-library-title">افزودن المان <span>DRAG OR CLICK</span></div><div class="ve-widget-grid">'+blockDefs.map(d=>'<button class="ve-widget" draggable="true" data-add="'+d[0]+'"><span>'+widgetIcon(d[0])+'</span><b>'+d[1]+'</b><small>'+d[2]+'</small></button>').join('')+'</div>'+
       '<div class="ve-layers-head"><b>ساختار صفحه</b><span>'+blocks().length+' لایه</span></div><div class="ve-layer-list" id="ve-layers">'+renderLayersHTML()+'</div>'+
@@ -147,7 +148,7 @@ export async function openDesigner({root,user,lang='fa'}){
     '<div class="ve-mobile-dock">'+panelButton('widgets','المان‌ها +')+panelButton('inspector','تنظیمات ⚙')+'</div>'+
    '</div>';
   const frame=document.getElementById('ve-preview');frame.addEventListener('load',updatePreview);
-  applyMobilePanel();
+  applyMobilePanel();setTool(canvasTool);document.getElementById('ve-device').style.zoom=zoom/100;document.getElementById('ve-zoom-value').textContent=zoom+'%';
  }
  function widgetIcon(type){return ({hero:'▣',search:'⌕',categories:'▦',featured:'▤',about:'¶',gallery:'▧',reviews:'❞',plans:'◇',contact:'☎',text:'T',image:'▧',button:'▰',logo:'✦',divider:'—',spacer:'↕'})[type]||'＋';}
  function renderLayersHTML(){
@@ -205,6 +206,7 @@ export async function openDesigner({root,user,lang='fa'}){
    return '<div class="ve-group"><h3>رنگ و پس‌زمینه</h3>'+input('رنگ پس‌زمینه','bg',b.bg||'#ffffff','color')+input('رنگ متن','color',b.color||config.ink,'color')+
     select('تراز محتوا','align',b.align||'right',[['right','راست'],['center','وسط'],['left','چپ']])+'</div>'+
     '<div class="ve-group"><h3>ابعاد و فاصله‌ها</h3>'+input('فاصله داخلی (px)','padding',b.padding??12,'number','min="0" max="48"')+input('گردی گوشه‌ها (px)','radius',b.radius??16,'number','min="0" max="40"')+input('اندازه نوشته (px)','fontSize',b.fontSize??14,'number','min="10" max="32"')+'</div>'+
+    '<div class="ve-group"><h3>موقعیت روی بوم</h3>'+input('افقی (درصد)','offsetX',b.offsetX||0,'number','min="-100" max="100"')+input('عمودی (px)','offsetY',b.offsetY||0,'number','min="-2000" max="2000"')+'<p class="ve-help">با ابزار حرکت یا دستگیره ✥ المان را مستقیم جابه‌جا کنید. مقدار صفر یعنی موقعیت اصلی.</p></div>'+
     '<div class="ve-group"><h3>چیدمان و کادر</h3>'+input('فاصله بالا (px)','marginTop',b.marginTop??0,'number','min="0" max="120"')+input('فاصله پایین (px)','marginBottom',b.marginBottom??0,'number','min="0" max="120"')+input('عرض المان (درصد)','width',b.width??100,'number','min="20" max="100"')+input('ضخامت کادر (px)','borderWidth',b.borderWidth??0,'number','min="0" max="10"')+input('رنگ کادر','borderColor',b.borderColor||config.color,'color')+select('سایه','shadow',b.shadow||'none',[['none','بدون سایه'],['soft','ملایم'],['deep','برجسته']])+'</div>'+
     '<div class="ve-group"><h3>نمایش</h3><label class="ve-check"><input type="checkbox" data-prop="visible" '+(b.visible===false?'':'checked')+'> نمایش این المان در اپلیکیشن</label></div>';
   }
@@ -272,6 +274,7 @@ export async function openDesigner({root,user,lang='fa'}){
   if(key==='visible')b.visible=!!value;
   else if(key==='padding'||key==='radius'||key==='fontSize')b[key]=Math.max(0,Math.min(key==='padding'?48:key==='radius'?40:32,Number(value)||0));
   else if(['marginTop','marginBottom','width','borderWidth'].includes(key))b[key]=Math.max(key==='width'?20:0,Math.min(key==='width'?100:key==='borderWidth'?10:120,Number(value)||0));
+  else if(key==='offsetX'||key==='offsetY')b[key]=Math.max(key==='offsetX'?-100:-2000,Math.min(key==='offsetX'?100:2000,Number(value)||0));
   else if(key==='shadow')b.shadow=['none','soft','deep'].includes(value)?value:'none';
   else if(key==='bg'||key==='color'||key==='borderColor')b[key]=safeColor(value);
   else if(key==='align')b.align=['right','center','left'].includes(value)?value:'right';
@@ -280,7 +283,11 @@ export async function openDesigner({root,user,lang='fa'}){
   else if(key==='id')return;
   markDirty();
  }
- function selectBlock(id){selectedId=id;inspectorTab='content';renderLayers();renderInspector();updatePreview();}
+ function selectBlock(id){if(!blocks().some(b=>b.id===id))return;selectedId=id;inspectorTab='content';renderLayers();renderInspector();postCanvas({type:'canvas-selection',id});}
+ function pasteBlock(source=clipboard){if(!source)return;if(blocks().length>=40){notify('حداکثر ۴۰ المان می‌توانید اضافه کنید.');return;}checkpoint();const copy=clone(source);copy.id=makeId();copy.offsetY=(copy.offsetY||0)+12;const index=blocks().findIndex(b=>b.id===selectedId);blocks().splice(index+1,0,copy);selectedId=copy.id;markDirty();renderInspector();renderLayers();}
+ function deleteBlock(){if(!selected())return;checkpoint();config.builder.blocks=blocks().filter(b=>b.id!==selectedId);selectedId=blocks()[0]?.id||null;markDirty();renderInspector();renderLayers();}
+ function setTool(tool){canvasTool=tool;document.querySelectorAll('[data-canvas-tool]').forEach(el=>el.classList.toggle('active',el.dataset.canvasTool===tool));postCanvas({type:'canvas-tool',tool});}
+ function reorder(id,targetId,after=false){const from=blocks().findIndex(b=>b.id===id);if(from<0||id===targetId)return;checkpoint();const item=blocks().splice(from,1)[0];const to=blocks().findIndex(b=>b.id===targetId);blocks().splice(to<0?blocks().length:to+(after?1:0),0,item);markDirty();renderLayers();}
  root.addEventListener('input',e=>{
   const el=e.target;
   if(el.dataset.prop){checkpoint();setProp(el.dataset.prop,el.type==='checkbox'?el.checked:el.value);renderLayers();}
@@ -300,7 +307,13 @@ export async function openDesigner({root,user,lang='fa'}){
  root.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
   try{
-   if(b.dataset.add){addBlock(b.dataset.add);mobilePanel='';applyMobilePanel();}
+   if(b.dataset.canvasTool){setTool(b.dataset.canvasTool);}
+   else if(b.hasAttribute('data-quick-text')){addBlock('text',Math.max(0,blocks().findIndex(x=>x.id===selectedId)+1));setTool('text');}
+   else if(b.hasAttribute('data-copy-selected')){if(selected()){clipboard=clone(selected());notify('المان کپی شد؛ حالا چسباندن را بزن.');}}
+   else if(b.hasAttribute('data-paste-selected')){pasteBlock();}
+   else if(b.hasAttribute('data-duplicate-selected')){pasteBlock(selected());}
+   else if(b.dataset.zoom){zoom=b.dataset.zoom==='reset'?100:Math.max(50,Math.min(150,zoom+Number(b.dataset.zoom)));document.getElementById('ve-device').style.zoom=zoom/100;document.getElementById('ve-zoom-value').textContent=zoom+'%';}
+   else if(b.dataset.add){addBlock(b.dataset.add);mobilePanel='';applyMobilePanel();}
    else if(b.hasAttribute('data-add-item')){if((config.items||[]).length>=30)throw new Error('حداکثر ۳۰ محصول یا خدمت می‌توانید اضافه کنید.');checkpoint();config.items=config.items||[];config.items.push({id:makeId(),title:'محصول یا خدمت جدید',description:'توضیحات محصول یا خدمت',price:'تماس بگیرید',category:'عمومی',image:'',art:'house'});markDirty();renderInspector();}
    else if(b.dataset.deleteItem!==undefined){checkpoint();config.items.splice(Number(b.dataset.deleteItem),1);markDirty();renderInspector();}
    else if(b.dataset.clearItemImage!==undefined){checkpoint();const item=config.items?.[Number(b.dataset.clearItemImage)];if(item)item.image='';markDirty();renderInspector();}
@@ -312,8 +325,8 @@ export async function openDesigner({root,user,lang='fa'}){
    else if(b.dataset.mobilePanel){mobilePanel=mobilePanel===b.dataset.mobilePanel?'':b.dataset.mobilePanel;applyMobilePanel();}
    else if(b.dataset.device){device=b.dataset.device;document.querySelectorAll('[data-device]').forEach(x=>x.classList.toggle('active',x===b));document.getElementById('ve-device').className='ve-device '+device;}
    else if(b.hasAttribute('data-move')){const i=Number(b.dataset.move),n=i+Number(b.dataset.dir);if(n>=0&&n<blocks().length){checkpoint();[blocks()[i],blocks()[n]]=[blocks()[n],blocks()[i]];markDirty();renderLayers();}}
-   else if(b.dataset.duplicate){const source=blocks().find(x=>x.id===b.dataset.duplicate);if(source){if(blocks().length>=40)throw new Error('حداکثر ۴۰ المان می‌توانید اضافه کنید.');const copy=clone(source);copy.id=makeId();const i=blocks().indexOf(source);checkpoint();blocks().splice(i+1,0,copy);selectedId=copy.id;markDirty();render();}}
-   else if(b.hasAttribute('data-delete-selected')){if(selectedId){checkpoint();config.builder.blocks=config.builder.blocks.filter(x=>x.id!==selectedId);selectedId=blocks()[0]?.id||null;markDirty();render();}}
+   else if(b.dataset.duplicate){pasteBlock(blocks().find(x=>x.id===b.dataset.duplicate));}
+   else if(b.hasAttribute('data-delete-selected')){deleteBlock();}
    else if(b.dataset.clearImage){checkpoint();const target=b.dataset.clearImage;if(target==='image'){const s=selected();if(s)s.image='';}else if(target.startsWith('global:'))config[target.slice(7)]='';else config[target]='';markDirty();renderInspector();}
    else if(b.dataset.palette){const p=palettes[Number(b.dataset.palette)];if(p){checkpoint();config.color=p[1];config.background=p[2];config.ink=p[3];markDirty();renderInspector();}}
    else if(b.hasAttribute('data-blank')){if(confirm('تمام المان‌های صفحه حذف شوند؟')){checkpoint();config.builder.blocks=[];selectedId=null;markDirty();render();}}
@@ -345,15 +358,26 @@ export async function openDesigner({root,user,lang='fa'}){
  window.addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==document.getElementById('ve-preview')?.contentWindow)return;
   if(e.data?.type==='preview-ready')updatePreview();
-  if(e.data?.type==='builder-select'){selectBlock(e.data.id);mobilePanel='inspector';applyMobilePanel();}
+  if(e.data?.type==='builder-select'){selectBlock(e.data.id);}
+  if(e.data?.type==='canvas-edit'){const b=blocks().find(b=>b.id===e.data.id);if(b&&['title','text'].includes(e.data.key)&&typeof e.data.value==='string'){checkpoint();b[e.data.key]=e.data.value.slice(0,e.data.key==='title'?180:3000);markDirty();renderInspector();renderLayers();}}
+  if(e.data?.type==='canvas-transform'){const b=blocks().find(b=>b.id===e.data.id);if(b){selectBlock(b.id);checkpoint();for(const key of ['offsetX','offsetY','width'])if(Number.isFinite(e.data[key]))b[key]=Math.max(key==='offsetX'?-100:key==='offsetY'?-2000:20,Math.min(key==='offsetX'?100:key==='offsetY'?2000:100,e.data[key]));markDirty();renderInspector();}}
+  if(e.data?.type==='canvas-reorder')reorder(e.data.id,e.data.targetId,e.data.after===true);
+  if(e.data?.type==='canvas-drop'){const payload=String(e.data.payload||'');if(payload.startsWith('add:')&&blockDefs.some(d=>d[0]===payload.slice(4)))addBlock(payload.slice(4),e.data.targetId?blocks().findIndex(b=>b.id===e.data.targetId):blocks().length);if(payload.startsWith('move:'))reorder(payload.slice(5),e.data.targetId);document.querySelector('.visual-editor')?.classList.remove('ve-dragging');}
+  if(e.data?.type==='canvas-action'){selectBlock(e.data.id);if(e.data.action==='duplicate')pasteBlock(selected());if(e.data.action==='delete')deleteBlock();}
+  if(e.data?.type==='canvas-key')handleKey({...e.data,preventDefault(){},target:null});
  });
- window.addEventListener('keydown',e=>{
-  if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();document.querySelector('[data-redo]')?.click();return;}
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();document.querySelector('[data-undo]')?.click();}
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();document.querySelector('[data-redo]')?.click();}
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();document.querySelector('[data-save]')?.click();}
-  if(e.key==='Escape'){mobilePanel='';applyMobilePanel();}
- });
+ function handleKey(e){
+  const typing=e.target?.closest?.('input,textarea,select,[contenteditable="true"],[contenteditable="plaintext-only"]');
+  const mod=e.ctrlKey||e.metaKey,key=String(e.key).toLowerCase();
+  if(mod&&key==='s'){e.preventDefault();document.querySelector('[data-save]')?.click();return;}
+  if(typing)return;
+  if(mod){if(['c','v','d','z','y'].includes(key))e.preventDefault();if(key==='c'&&selected())clipboard=clone(selected());if(key==='v')pasteBlock();if(key==='d')pasteBlock(selected());if(key==='z')document.querySelector(e.shiftKey?'[data-redo]':'[data-undo]')?.click();if(key==='y')document.querySelector('[data-redo]')?.click();return;}
+  if(key==='delete'||key==='backspace'){e.preventDefault();deleteBlock();}
+  if(key==='t')setTool('text');if(key==='v')setTool('select');
+  if(key.startsWith('arrow')&&selected()){e.preventDefault();checkpoint();const b=selected(),step=e.shiftKey?10:1;if(key==='arrowleft'||key==='arrowright')setProp('offsetX',(b.offsetX||0)+(key==='arrowleft'?-step:step));else setProp('offsetY',(b.offsetY||0)+(key==='arrowup'?-step:step));renderInspector();}
+  if(e.key==='Escape'){mobilePanel='';applyMobilePanel();setTool('select');}
+ }
+ window.addEventListener('keydown',handleKey);
  window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
  render();
 }
