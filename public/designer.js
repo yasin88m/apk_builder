@@ -76,23 +76,27 @@ export async function openDesigner({root,user,lang='fa'}){
   return data;
  }
  if(params.get('id')){
-  try{currentApp=(await api('/api/apps/'+params.get('id'))).app;config=normalize(currentApp.config);}
+  try{currentApp=(await api('/api/apps/'+params.get('id'))).app;config=normalize(currentApp.config);
+   try{const draft=JSON.parse(localStorage.getItem('app-draft:'+currentApp.id)||'null');if(draft?.config&&draft.baseUpdatedAt===currentApp.updatedAt){config=normalize(draft.config);dirty=true;}}catch{}
+  }
   catch(e){root.innerHTML='<main class="shell"><div class="empty-state"><p>'+esc(e.message)+'</p><a class="button" href="/dashboard">بازگشت</a></div></main>';return;}
  }else{
   let cached=null;
   try{cached=JSON.parse(localStorage.getItem('app-draft:new')||'null');}catch{}
-  config=normalize(cached||demo(params.get('template')||'servly'));
+  const draft=cached?.config||cached;
+  config=normalize(draft&&(!params.get('template')||draft.template===params.get('template'))?draft:demo(params.get('template')||'servly'));
  }
  if(!config.builder||!Array.isArray(config.builder.blocks)||(!config.builder.enabled&&!config.builder.blocks.length))config.builder={enabled:true,blocks:defaultBlocks(config)};
  else config.builder.enabled=true;
  selectedId=config.builder.blocks[0]?.id||null;
  const blocks=()=>config.builder.blocks;
  const selected=()=>blocks().find(b=>b.id===selectedId)||null;
- function markDirty(){dirty=true;try{localStorage.setItem('app-draft:'+(currentApp?.id||'new'),JSON.stringify(config));}catch{}const s=document.querySelector('.ve-save-state');if(s)s.textContent='تغییرات ذخیره‌نشده';updatePreview();}
+ function markDirty(){dirty=true;try{localStorage.setItem('app-draft:'+(currentApp?.id||'new'),JSON.stringify({config,baseUpdatedAt:currentApp?.updatedAt||null}));}catch{}const s=document.querySelector('.ve-save-state');if(s)s.textContent='تغییرات ذخیره‌نشده';updatePreview();}
  function refreshHistory(){const u=document.querySelector('[data-undo]'),r=document.querySelector('[data-redo]');if(u)u.disabled=!undoStack.length;if(r)r.disabled=!redoStack.length;}
  function checkpoint(){undoStack.push(clone(config));if(undoStack.length>40)undoStack.shift();redoStack.length=0;refreshHistory();}
  function mutate(fn){checkpoint();fn();markDirty();renderInspector();renderLayers();}
  function addBlock(type,index=blocks().length){
+  if(blocks().length>=40){notify('حداکثر ۴۰ المان می‌توانید اضافه کنید.');return;}
   const d=defaults[type]||defaults.text;
   const b=Object.assign({id:makeId(),type,visible:true,bg:'',color:'',align:'right',padding:12,radius:16,fontSize:14},clone(d));
   checkpoint();blocks().splice(Math.max(0,Math.min(index,blocks().length)),0,b);selectedId=b.id;markDirty();render();
@@ -133,7 +137,7 @@ export async function openDesigner({root,user,lang='fa'}){
       '<button data-inspector-tab="page" class="'+(inspectorTab==='page'?'active':'')+'">صفحه</button>'+
      '</div><div class="ve-panel-scroll" id="ve-inspector-body">'+inspectorHTML()+'</div></aside>'+
      '<main class="ve-stage"><div class="ve-stagebar"><div><span class="ve-live-dot"></span>پیش‌نمایش زنده <small>LIVE CANVAS</small></div><div class="ve-stage-actions"><button data-blank>صفحه خالی</button><button data-add-selected>+ افزودن المان</button></div></div>'+
-      '<div class="ve-canvas" id="ve-canvas"><div class="ve-device '+device+'" id="ve-device"><span class="ve-camera"></span><iframe id="ve-preview" title="پیش‌نمایش اپلیکیشن" src="/preview.html?template='+encodeURIComponent(config.template)+'"></iframe></div></div>'+
+      '<div class="ve-canvas" id="ve-canvas"><div class="ve-device '+device+'" id="ve-device"><span class="ve-camera"></span><iframe id="ve-preview" title="پیش‌نمایش اپلیکیشن" src="/preview.html?editing=1&template='+encodeURIComponent(config.template)+'"></iframe></div></div>'+
       '<div class="ve-canvas-foot"><span>ANDROID APP CANVAS</span><span>'+blocks().filter(b=>b.visible!==false).length+' بخش فعال · '+blocks().length+' المان</span></div></main>'+
      '<aside class="ve-panel ve-widgets"><div class="ve-panel-head"><span class="ve-panel-icon">▦</span><div><b>المان‌ها و ساختار</b><small>ELEMENTS & LAYERS</small></div></div>'+
       '<div class="ve-library-title">افزودن المان <span>DRAG OR CLICK</span></div><div class="ve-widget-grid">'+blockDefs.map(d=>'<button class="ve-widget" draggable="true" data-add="'+d[0]+'"><span>'+widgetIcon(d[0])+'</span><b>'+d[1]+'</b><small>'+d[2]+'</small></button>').join('')+'</div>'+
@@ -201,6 +205,7 @@ export async function openDesigner({root,user,lang='fa'}){
    return '<div class="ve-group"><h3>رنگ و پس‌زمینه</h3>'+input('رنگ پس‌زمینه','bg',b.bg||'#ffffff','color')+input('رنگ متن','color',b.color||config.ink,'color')+
     select('تراز محتوا','align',b.align||'right',[['right','راست'],['center','وسط'],['left','چپ']])+'</div>'+
     '<div class="ve-group"><h3>ابعاد و فاصله‌ها</h3>'+input('فاصله داخلی (px)','padding',b.padding??12,'number','min="0" max="48"')+input('گردی گوشه‌ها (px)','radius',b.radius??16,'number','min="0" max="40"')+input('اندازه نوشته (px)','fontSize',b.fontSize??14,'number','min="10" max="32"')+'</div>'+
+    '<div class="ve-group"><h3>چیدمان و کادر</h3>'+input('فاصله بالا (px)','marginTop',b.marginTop??0,'number','min="0" max="120"')+input('فاصله پایین (px)','marginBottom',b.marginBottom??0,'number','min="0" max="120"')+input('عرض المان (درصد)','width',b.width??100,'number','min="20" max="100"')+input('ضخامت کادر (px)','borderWidth',b.borderWidth??0,'number','min="0" max="10"')+input('رنگ کادر','borderColor',b.borderColor||config.color,'color')+select('سایه','shadow',b.shadow||'none',[['none','بدون سایه'],['soft','ملایم'],['deep','برجسته']])+'</div>'+
     '<div class="ve-group"><h3>نمایش</h3><label class="ve-check"><input type="checkbox" data-prop="visible" '+(b.visible===false?'':'checked')+'> نمایش این المان در اپلیکیشن</label></div>';
   }
   if(inspectorTab==='advanced'){
@@ -223,7 +228,7 @@ export async function openDesigner({root,user,lang='fa'}){
    const data=await api(currentApp?'/api/apps/'+currentApp.id:'/api/apps',{method:currentApp?'PUT':'POST',body:JSON.stringify({config})});
    currentApp=data.app;dirty=false;history.replaceState(null,'','/editor?id='+currentApp.id);
    const s=document.querySelector('.ve-save-state');if(s)s.textContent='در حساب ذخیره شد';
-   try{localStorage.setItem('app-draft:'+currentApp.id,JSON.stringify(config));localStorage.removeItem('app-draft:new');}catch{}
+   try{localStorage.removeItem('app-draft:'+currentApp.id);localStorage.removeItem('app-draft:new');}catch{}
    return true;
   }finally{saving=false;if(button){button.disabled=false;button.textContent='ذخیره';}}
  }
@@ -266,14 +271,16 @@ export async function openDesigner({root,user,lang='fa'}){
   const b=selected();if(!b)return;
   if(key==='visible')b.visible=!!value;
   else if(key==='padding'||key==='radius'||key==='fontSize')b[key]=Math.max(0,Math.min(key==='padding'?48:key==='radius'?40:32,Number(value)||0));
-  else if(key==='bg'||key==='color')b[key]=safeColor(value);
+  else if(['marginTop','marginBottom','width','borderWidth'].includes(key))b[key]=Math.max(key==='width'?20:0,Math.min(key==='width'?100:key==='borderWidth'?10:120,Number(value)||0));
+  else if(key==='shadow')b.shadow=['none','soft','deep'].includes(value)?value:'none';
+  else if(key==='bg'||key==='color'||key==='borderColor')b[key]=safeColor(value);
   else if(key==='align')b.align=['right','center','left'].includes(value)?value:'right';
   else if(['title','text','buttonText'].includes(key))b[key]=String(value).slice(0,3000);
   else if(key==='buttonUrl')b[key]=String(value).slice(0,1000);
   else if(key==='id')return;
   markDirty();
  }
- function selectBlock(id){selectedId=id;inspectorTab='content';renderLayers();renderInspector();}
+ function selectBlock(id){selectedId=id;inspectorTab='content';renderLayers();renderInspector();updatePreview();}
  root.addEventListener('input',e=>{
   const el=e.target;
   if(el.dataset.prop){checkpoint();setProp(el.dataset.prop,el.type==='checkbox'?el.checked:el.value);renderLayers();}
@@ -305,14 +312,14 @@ export async function openDesigner({root,user,lang='fa'}){
    else if(b.dataset.mobilePanel){mobilePanel=mobilePanel===b.dataset.mobilePanel?'':b.dataset.mobilePanel;applyMobilePanel();}
    else if(b.dataset.device){device=b.dataset.device;document.querySelectorAll('[data-device]').forEach(x=>x.classList.toggle('active',x===b));document.getElementById('ve-device').className='ve-device '+device;}
    else if(b.hasAttribute('data-move')){const i=Number(b.dataset.move),n=i+Number(b.dataset.dir);if(n>=0&&n<blocks().length){checkpoint();[blocks()[i],blocks()[n]]=[blocks()[n],blocks()[i]];markDirty();renderLayers();}}
-   else if(b.dataset.duplicate){const source=blocks().find(x=>x.id===b.dataset.duplicate);if(source){const copy=clone(source);copy.id=makeId();const i=blocks().indexOf(source);checkpoint();blocks().splice(i+1,0,copy);selectedId=copy.id;markDirty();render();}}
+   else if(b.dataset.duplicate){const source=blocks().find(x=>x.id===b.dataset.duplicate);if(source){if(blocks().length>=40)throw new Error('حداکثر ۴۰ المان می‌توانید اضافه کنید.');const copy=clone(source);copy.id=makeId();const i=blocks().indexOf(source);checkpoint();blocks().splice(i+1,0,copy);selectedId=copy.id;markDirty();render();}}
    else if(b.hasAttribute('data-delete-selected')){if(selectedId){checkpoint();config.builder.blocks=config.builder.blocks.filter(x=>x.id!==selectedId);selectedId=blocks()[0]?.id||null;markDirty();render();}}
    else if(b.dataset.clearImage){checkpoint();const target=b.dataset.clearImage;if(target==='image'){const s=selected();if(s)s.image='';}else if(target.startsWith('global:'))config[target.slice(7)]='';else config[target]='';markDirty();renderInspector();}
    else if(b.dataset.palette){const p=palettes[Number(b.dataset.palette)];if(p){checkpoint();config.color=p[1];config.background=p[2];config.ink=p[3];markDirty();renderInspector();}}
    else if(b.hasAttribute('data-blank')){if(confirm('تمام المان‌های صفحه حذف شوند؟')){checkpoint();config.builder.blocks=[];selectedId=null;markDirty();render();}}
    else if(b.hasAttribute('data-add-selected')){addBlock('text');}
-   else if(b.hasAttribute('data-undo')){if(undoStack.length){redoStack.push(clone(config));config=undoStack.pop();selectedId=config.builder.blocks[0]?.id||null;dirty=true;render();refreshHistory();}}
-   else if(b.hasAttribute('data-redo')){if(redoStack.length){undoStack.push(clone(config));config=redoStack.pop();selectedId=config.builder.blocks[0]?.id||null;dirty=true;render();refreshHistory();}}
+   else if(b.hasAttribute('data-undo')){if(undoStack.length){redoStack.push(clone(config));config=undoStack.pop();selectedId=config.builder.blocks[0]?.id||null;markDirty();render();refreshHistory();}}
+   else if(b.hasAttribute('data-redo')){if(redoStack.length){undoStack.push(clone(config));config=redoStack.pop();selectedId=config.builder.blocks[0]?.id||null;markDirty();render();refreshHistory();}}
    else if(b.hasAttribute('data-save')){if(await save())notify('پروژه ذخیره شد.');}
    else if(b.hasAttribute('data-publish')){await publish();}
    else if(b.hasAttribute('data-export-web')){await exportWeb();}
@@ -338,9 +345,10 @@ export async function openDesigner({root,user,lang='fa'}){
  window.addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==document.getElementById('ve-preview')?.contentWindow)return;
   if(e.data?.type==='preview-ready')updatePreview();
-  if(e.data?.type==='builder-select'){selectBlock(e.data.id);}
+  if(e.data?.type==='builder-select'){selectBlock(e.data.id);mobilePanel='inspector';applyMobilePanel();}
  });
  window.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();document.querySelector('[data-redo]')?.click();return;}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();document.querySelector('[data-undo]')?.click();}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();document.querySelector('[data-redo]')?.click();}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();document.querySelector('[data-save]')?.click();}
