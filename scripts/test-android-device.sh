@@ -10,7 +10,7 @@ ready=0
 for attempt in $(seq 1 12); do
  adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
  adb pull /sdcard/window.xml .native-build/device-ui.xml >/dev/null 2>&1 || true
- if grep -q 'پیشنهادهای ما' .native-build/device-ui.xml; then ready=1; break; fi
+ if grep -q 'کیف چرم کلاسیک' .native-build/device-ui.xml; then ready=1; break; fi
  sleep 2
 done
 adb exec-out screencap -p > .native-build/sample-screen.png
@@ -19,4 +19,19 @@ if [[ "$ready" != 1 ]]; then cat .native-build/device-ui.xml; cat .native-build/
 adb install -r .native-build/sample-updated.apk
 adb shell am force-stop "$package_name"
 adb shell am start -W -n "$package_name/com.appbuilder.runtime.MainActivity"
+for template in servly eduboss sport; do
+ adb install -r ".native-build/$template.apk"
+ adb shell am force-stop "$package_name"
+ adb shell am start -W -n "$package_name/com.appbuilder.runtime.MainActivity"
+ ready=0
+ case "$template" in servly) marker='نظافت منزل';; eduboss) marker='مبانی طراحی گرافیک';; sport) marker='کفش تمرین';; esac
+ for attempt in $(seq 1 12); do
+  adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
+  adb pull /sdcard/window.xml ".native-build/$template-ui.xml" >/dev/null 2>&1 || true
+  if grep -q "$marker" ".native-build/$template-ui.xml"; then ready=1; break; fi
+  sleep 2
+ done
+ adb exec-out screencap -p > ".native-build/$template-screen.png"
+ if [[ "$ready" != 1 ]]; then cat ".native-build/$template-ui.xml"; exit 1; fi
+done
 echo 'Android installation, offline rendering and in-place update succeeded.'

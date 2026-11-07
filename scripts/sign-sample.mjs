@@ -7,3 +7,5 @@ const config=demo('artstore');config.name='نمونه اپلیکیشن اندر�
 await writeFile('.native-build/sample.apk',await buildAndroidAPK(config,assets,identity,{versionCode:100}));
 await writeFile('.native-build/sample-updated.apk',await buildAndroidAPK({...config,name:'نسخه دوم برنامه'},assets,identity,{versionCode:101}));
 console.log('Created signed sample APKs with a persistent application identity.');
+
+for(const template of ['servly','eduboss','sport'])await writeFile('.native-build/'+template+'.apk',await buildAndroidAPK(demo(template),assets,identity,{versionCode:102+['servly','eduboss','sport'].indexOf(template)}));

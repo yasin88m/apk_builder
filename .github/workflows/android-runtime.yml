@@ -53,9 +53,9 @@ jobs:
         with:
           name: android-apk-verification
           path: |
-            .native-build/sample.apk
+            .native-build/*.apk
             .native-build/runtime.apk
-            .native-build/sample-screen.png
-            .native-build/device-ui.xml
+            .native-build/*-screen.png
+            .native-build/*-ui.xml
             .native-build/device-log.txt
             .native-build/apksigner.jar
