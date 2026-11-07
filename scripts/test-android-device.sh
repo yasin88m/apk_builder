@@ -10,7 +10,7 @@ ready=0
 for attempt in $(seq 1 12); do
  adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
  adb pull /sdcard/window.xml .native-build/device-ui.xml >/dev/null 2>&1 || true
- if grep -q 'کیف چرم کلاسیک' .native-build/device-ui.xml; then ready=1; break; fi
+ if grep -q 'منتخبِ مجموعه' .native-build/device-ui.xml; then ready=1; break; fi
  sleep 2
 done
 adb exec-out screencap -p > .native-build/sample-screen.png
@@ -24,7 +24,7 @@ for template in servly eduboss sport; do
  adb shell am force-stop "$package_name"
  adb shell am start -W -n "$package_name/com.appbuilder.runtime.MainActivity"
  ready=0
- case "$template" in servly) marker='نظافت منزل';; eduboss) marker='مبانی طراحی گرافیک';; sport) marker='کفش تمرین';; esac
+ case "$template" in servly) marker='چه کمکی نیاز داری؟';; eduboss) marker='دوره‌های منتخب';; sport) marker='برای تمرین بعدی تو';; esac
  for attempt in $(seq 1 12); do
   adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
   adb pull /sdcard/window.xml ".native-build/$template-ui.xml" >/dev/null 2>&1 || true
