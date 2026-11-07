@@ -130,3 +130,6 @@ body.designer-open{overflow:hidden}
  .ve-canvas-foot{font-size:7px;padding:0 7px}
  .ve-inspector,.ve-widgets{top:60px;bottom:54px}
 }
+
+.visual-editor.ve-dragging .ve-device iframe{pointer-events:none}
+.visual-editor.ve-dragging .ve-canvas{outline:2px dashed #9274f5;outline-offset:-7px}
