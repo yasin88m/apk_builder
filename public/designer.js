@@ -175,7 +175,7 @@ export async function openDesigner({root,user,lang='fa'}){
   if(!b)return '<div class="ve-empty">یک المان از ساختار صفحه انتخاب کن یا از کتابخانه المان جدید اضافه کن.</div>';
   if(inspectorTab==='content'){
    let html='<div class="ve-selected-name"><span>'+widgetIcon(b.type)+'</span><div><b>'+esc(blockDefs.find(x=>x[0]===b.type)?.[1]||b.type)+'</b><small>محتوای المان انتخاب‌شده</small></div></div>';
-   if(['hero','featured','about','gallery','reviews','plans','contact','text','image','button','logo'].includes(b.type))html+=input('عنوان','title',b.title);
+   if(['hero','search','categories','featured','about','gallery','reviews','plans','contact','text','image','button','logo'].includes(b.type))html+=input('عنوان','title',b.title);
    if(['hero','about','contact','text','image','button','logo','featured'].includes(b.type))html+=area('متن و توضیحات','text',b.text);
    if(['hero','contact','button'].includes(b.type))html+=input('متن دکمه','buttonText',b.buttonText);
    if(['hero','image','logo'].includes(b.type))html+=upload('تصویر المان','image',b.image);
