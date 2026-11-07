@@ -187,6 +187,7 @@ export async function openDesigner({root,user,lang='fa'}){
    if(['hero','search','categories','featured','about','gallery','reviews','plans','contact','text','image','button','logo'].includes(b.type))html+=input('عنوان','title',b.title);
    if(['hero','about','contact','text','image','button','logo','featured'].includes(b.type))html+=area('متن و توضیحات','text',b.text);
    if(['hero','contact','button'].includes(b.type))html+=input('متن دکمه','buttonText',b.buttonText);
+   if(['hero','button'].includes(b.type))html+=input('پیوند دکمه (اختیاری)','buttonUrl',b.buttonUrl||'','url');
    if(['hero','image','logo'].includes(b.type))html+=upload('تصویر المان','image',b.image);
    if(b.type==='featured')html+='<div class="ve-group ve-items-manager"><div class="ve-items-head"><h3>محتوای محصولات و خدمات</h3><button class="ve-add-item" data-add-item>＋ افزودن</button></div><p class="ve-help">این موارد مستقیماً در کارت‌های اپلیکیشن نمایش داده می‌شوند.</p>'+(config.items||[]).map((item,i)=>'<div class="ve-item-card"><div class="ve-item-card-head"><b>مورد '+(i+1)+'</b><button data-delete-item="'+i+'" class="ve-item-remove">حذف</button></div>'+itemField(i,'title','نام محصول / خدمت',item.title)+itemField(i,'category','دسته‌بندی',item.category)+itemField(i,'price','قیمت یا توضیح قیمت',item.price)+itemField(i,'description','توضیحات',item.description,true)+'<label class="ve-upload ve-item-upload"><input type="file" accept="image/png,image/jpeg,image/webp" data-item-image="'+i+'">＋ تغییر تصویر</label>'+(item.image?'<div class="ve-image-preview"><img src="'+esc(item.image)+'" alt=""><button data-clear-item-image="'+i+'">حذف تصویر</button></div>':'')+'</div>').join('')+'</div>';
    if(b.type==='gallery')html+='<div class="ve-group"><div class="ve-items-head"><h3>تصاویر گالری</h3><span>'+(config.gallery||[]).length+'/12</span></div><div class="ve-field"><label class="ve-upload"><input type="file" accept="image/png,image/jpeg,image/webp" data-gallery-image>＋ افزودن تصویر</label></div><div class="ve-gallery-grid">'+(config.gallery||[]).map((src,i)=>'<div><img src="'+esc(src)+'" alt=""><button data-delete-gallery="'+i+'">×</button></div>').join('')+'</div></div>';
@@ -242,6 +243,7 @@ export async function openDesigner({root,user,lang='fa'}){
   else if(key==='bg'||key==='color')b[key]=safeColor(value);
   else if(key==='align')b.align=['right','center','left'].includes(value)?value:'right';
   else if(['title','text','buttonText'].includes(key))b[key]=String(value).slice(0,3000);
+  else if(key==='buttonUrl')b[key]=String(value).slice(0,1000);
   else if(key==='id')return;
   markDirty();
  }
