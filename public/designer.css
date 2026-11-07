@@ -133,3 +133,18 @@ body.designer-open{overflow:hidden}
 
 .visual-editor.ve-dragging .ve-device iframe{pointer-events:none}
 .visual-editor.ve-dragging .ve-canvas{outline:2px dashed #9274f5;outline-offset:-7px}
+
+.ve-items-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 10px}
+.ve-items-head h3{margin:0}
+.ve-items-head>span{font-size:9px;color:#888b9c}
+.ve-add-item{background:#9274f51c;border:1px solid #9274f544;color:#c8b8ff!important;border-radius:7px;padding:5px 9px;font-size:9px;white-space:nowrap}
+.ve-item-card{padding:10px;background:#11131b;border:1px solid #ffffff12;border-radius:10px;margin:10px 0}
+.ve-item-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ve-item-card-head b{font-size:10px;color:#c9c7d6}
+.ve-item-remove{background:#d653691a;border:1px solid #d6536933;color:#f2a2ad!important;border-radius:6px;padding:3px 8px;font-size:9px}
+.ve-item-field{margin-bottom:9px}
+.ve-item-upload{margin-top:5px}
+.ve-gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.ve-gallery-grid>div{position:relative;aspect-ratio:1;min-width:0}
+.ve-gallery-grid img{width:100%;height:100%;object-fit:cover;border-radius:8px;background:#252735}
+.ve-gallery-grid button{position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:#1a1b24e8;color:#ffb4bf!important;font-size:15px;line-height:1}
