@@ -81,7 +81,7 @@ export async function openDesigner({root,user,lang='fa'}){
   try{cached=JSON.parse(localStorage.getItem('app-draft:new')||'null');}catch{}
   config=normalize(cached||demo(params.get('template')||'servly'));
  }
- if(!config.builder||!Array.isArray(config.builder.blocks)||!config.builder.blocks.length)config.builder={enabled:true,blocks:defaultBlocks(config)};
+ if(!config.builder||!Array.isArray(config.builder.blocks)||(!config.builder.enabled&&!config.builder.blocks.length))config.builder={enabled:true,blocks:defaultBlocks(config)};
  else config.builder.enabled=true;
  selectedId=config.builder.blocks[0]?.id||null;
  const blocks=()=>config.builder.blocks;
@@ -97,7 +97,7 @@ export async function openDesigner({root,user,lang='fa'}){
  }
  function updatePreview(){
   const frame=document.getElementById('ve-preview');
-  if(frame?.contentWindow)frame.contentWindow.postMessage({type:'app-preview',config},location.origin);
+  if(frame?.contentWindow){const previewConfig=clone(config);previewConfig.builder.selectedId=selectedId;frame.contentWindow.postMessage({type:'app-preview',config:previewConfig},location.origin);}
  }
  function panelButton(name,label){return '<button class="ve-mobile-tab '+(mobilePanel===name?'active':'')+'" data-mobile-panel="'+name+'">'+label+'</button>';}
  function render(){
@@ -262,7 +262,7 @@ export async function openDesigner({root,user,lang='fa'}){
    else if(b.hasAttribute('data-add-selected')){addBlock('text');}
    else if(b.hasAttribute('data-undo')){if(undoStack.length){redoStack.push(clone(config));config=undoStack.pop();selectedId=config.builder.blocks[0]?.id||null;dirty=true;render();refreshHistory();}}
    else if(b.hasAttribute('data-redo')){if(redoStack.length){undoStack.push(clone(config));config=redoStack.pop();selectedId=config.builder.blocks[0]?.id||null;dirty=true;render();refreshHistory();}}
-   else if(b.hasAttribute('data-save')){await save();notify('پروژه ذخیره شد.');}
+   else if(b.hasAttribute('data-save')){if(await save())notify('پروژه ذخیره شد.');}
    else if(b.hasAttribute('data-build')){await build();}
    else if(b.hasAttribute('data-back')){location.href=currentApp?'/builder?id='+currentApp.id:'/builder?new=1&template='+config.template;}
   }catch(err){notify(err.message);}
