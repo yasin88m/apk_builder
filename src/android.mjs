@@ -56,6 +56,6 @@ export async function buildAndroidAPK(config,assets,identity,{versionCode=Math.f
  const c=normalize(config),files=zipEntries(base);files['AndroidManifest.xml']=patchManifest(files['AndroidManifest.xml'],{packageName:identity.packageName,label:c.name.slice(0,80),versionCode,versionName:'1.'+versionCode});
  for(const path of Object.keys(files))if(path.startsWith('META-INF/'))delete files[path];
  files['assets/index.html']=nativeHTML(c);for(const file of ['font.css','mobile.css','mobile.js','model.js'])files['assets/'+file]=file==='mobile.js'?assets[file].replace("import './install.js';",'').replace('target="_blank"','target="_self"'):assets[file];
- for(const path of Object.keys(files))if(/^res\/drawable[^/]*\/icon\.png$/.test(path))files[path]=appIcon(512,c.color);
+ for(const path of Object.keys(files))if(/^res\/drawable[^/]*\/icon\.png$/.test(path))files[path]=c.logo.startsWith('data:image/png;base64,')?from64(c.logo.split(',')[1]):appIcon(512,c.color);
  return signAndroidAPK(zipFiles(files,{align:4}),identity);
 }
