@@ -271,14 +271,15 @@ export async function openDesigner({root,user,lang='fa'}){
  });
  root.addEventListener('dragstart',e=>{
   const widget=e.target.closest('[data-add]'),layer=e.target.closest('[data-layer-id]');
-  if(widget){e.dataTransfer.setData('text/plain','add:'+widget.dataset.add);e.dataTransfer.effectAllowed='copy';}
-  else if(layer){e.dataTransfer.setData('text/plain','move:'+layer.dataset.layerId);e.dataTransfer.effectAllowed='move';}
+  if(widget){e.dataTransfer.setData('text/plain','add:'+widget.dataset.add);e.dataTransfer.effectAllowed='copy';document.querySelector('.visual-editor')?.classList.add('ve-dragging');}
+  else if(layer){e.dataTransfer.setData('text/plain','move:'+layer.dataset.layerId);e.dataTransfer.effectAllowed='move';document.querySelector('.visual-editor')?.classList.add('ve-dragging');}
  });
- root.addEventListener('dragover',e=>{if(e.target.closest('[data-layer-id],#ve-canvas'))e.preventDefault();});
+ root.addEventListener('dragend',()=>document.querySelector('.visual-editor')?.classList.remove('ve-dragging'));
+ root.addEventListener('dragover',e=>{if(e.target.closest('[data-layer-id],#ve-canvas')){e.preventDefault();e.dataTransfer.dropEffect=e.dataTransfer.getData('text/plain').startsWith('move:')?'move':'copy';}});
  root.addEventListener('drop',e=>{
-  const layer=e.target.closest('[data-layer-id]'),payload=e.dataTransfer.getData('text/plain');if(!payload)return;e.preventDefault();
-  if(payload.startsWith('add:')){addBlock(payload.slice(4),layer?blocks().findIndex(x=>x.id===layer.dataset.layerId):blocks().length);}
-  else if(payload.startsWith('move:')&&layer){const from=blocks().findIndex(x=>x.id===payload.slice(5)),to=blocks().findIndex(x=>x.id===layer.dataset.layerId);if(from>=0&&to>=0&&from!==to){checkpoint();const item=blocks().splice(from,1)[0];blocks().splice(to,0,item);markDirty();renderLayers();}}
+  const layer=e.target.closest('[data-layer-id]'),payload=e.dataTransfer.getData('text/plain');if(!payload)return;e.preventDefault();document.querySelector('.visual-editor')?.classList.remove('ve-dragging');
+  if(payload.startsWith('add:'))addBlock(payload.slice(4),layer?blocks().findIndex(x=>x.id===layer.dataset.layerId):blocks().length);
+  else if(payload.startsWith('move:')){const from=blocks().findIndex(x=>x.id===payload.slice(5)),to=layer?blocks().findIndex(x=>x.id===layer.dataset.layerId):blocks().length-1;if(from>=0&&to>=0&&from!==to){checkpoint();const item=blocks().splice(from,1)[0];blocks().splice(Math.min(to,blocks().length),0,item);markDirty();renderLayers();}}
  });
  window.addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==document.getElementById('ve-preview')?.contentWindow)return;
