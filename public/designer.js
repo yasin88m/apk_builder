@@ -87,12 +87,13 @@ export async function openDesigner({root,user,lang='fa'}){
  const blocks=()=>config.builder.blocks;
  const selected=()=>blocks().find(b=>b.id===selectedId)||null;
  function markDirty(){dirty=true;try{localStorage.setItem('app-draft:'+(currentApp?.id||'new'),JSON.stringify(config));}catch{}const s=document.querySelector('.ve-save-state');if(s)s.textContent='تغییرات ذخیره‌نشده';updatePreview();}
- function checkpoint(){undoStack.push(clone(config));if(undoStack.length>40)undoStack.shift();redoStack.length=0;}
+ function refreshHistory(){const u=document.querySelector('[data-undo]'),r=document.querySelector('[data-redo]');if(u)u.disabled=!undoStack.length;if(r)r.disabled=!redoStack.length;}
+ function checkpoint(){undoStack.push(clone(config));if(undoStack.length>40)undoStack.shift();redoStack.length=0;refreshHistory();}
  function mutate(fn){checkpoint();fn();markDirty();renderInspector();renderLayers();}
  function addBlock(type,index=blocks().length){
   const d=defaults[type]||defaults.text;
   const b=Object.assign({id:makeId(),type,visible:true,bg:'',color:'',align:'right',padding:12,radius:16,fontSize:14},clone(d));
-  blocks().splice(Math.max(0,Math.min(index,blocks().length)),0,b);selectedId=b.id;markDirty();render();
+  checkpoint();blocks().splice(Math.max(0,Math.min(index,blocks().length)),0,b);selectedId=b.id;markDirty();render();
  }
  function updatePreview(){
   const frame=document.getElementById('ve-preview');
@@ -255,12 +256,12 @@ export async function openDesigner({root,user,lang='fa'}){
    else if(b.hasAttribute('data-move')){const i=Number(b.dataset.move),n=i+Number(b.dataset.dir);if(n>=0&&n<blocks().length){checkpoint();[blocks()[i],blocks()[n]]=[blocks()[n],blocks()[i]];markDirty();renderLayers();}}
    else if(b.dataset.duplicate){const source=blocks().find(x=>x.id===b.dataset.duplicate);if(source){const copy=clone(source);copy.id=makeId();const i=blocks().indexOf(source);checkpoint();blocks().splice(i+1,0,copy);selectedId=copy.id;markDirty();render();}}
    else if(b.hasAttribute('data-delete-selected')){if(selectedId){checkpoint();config.builder.blocks=config.builder.blocks.filter(x=>x.id!==selectedId);selectedId=blocks()[0]?.id||null;markDirty();render();}}
-   else if(b.dataset.clearImage){const target=b.dataset.clearImage;if(target==='image'){const s=selected();if(s)s.image='';}else if(target.startsWith('global:'))config[target.slice(7)]='';else config[target]='';markDirty();renderInspector();}
+   else if(b.dataset.clearImage){checkpoint();const target=b.dataset.clearImage;if(target==='image'){const s=selected();if(s)s.image='';}else if(target.startsWith('global:'))config[target.slice(7)]='';else config[target]='';markDirty();renderInspector();}
    else if(b.dataset.palette){const p=palettes[Number(b.dataset.palette)];if(p){checkpoint();config.color=p[1];config.background=p[2];config.ink=p[3];markDirty();renderInspector();}}
    else if(b.hasAttribute('data-blank')){if(confirm('تمام المان‌های صفحه حذف شوند؟')){checkpoint();config.builder.blocks=[];selectedId=null;markDirty();render();}}
    else if(b.hasAttribute('data-add-selected')){addBlock('text');}
-   else if(b.hasAttribute('data-undo')){if(undoStack.length){redoStack.push(clone(config));config=undoStack.pop();selectedId=config.builder.blocks[0]?.id||null;dirty=true;render();}}
-   else if(b.hasAttribute('data-redo')){if(redoStack.length){undoStack.push(clone(config));config=redoStack.pop();selectedId=config.builder.blocks[0]?.id||null;dirty=true;render();}}
+   else if(b.hasAttribute('data-undo')){if(undoStack.length){redoStack.push(clone(config));config=undoStack.pop();selectedId=config.builder.blocks[0]?.id||null;dirty=true;render();refreshHistory();}}
+   else if(b.hasAttribute('data-redo')){if(redoStack.length){undoStack.push(clone(config));config=redoStack.pop();selectedId=config.builder.blocks[0]?.id||null;dirty=true;render();refreshHistory();}}
    else if(b.hasAttribute('data-save')){await save();notify('پروژه ذخیره شد.');}
    else if(b.hasAttribute('data-build')){await build();}
    else if(b.hasAttribute('data-back')){location.href=currentApp?'/builder?id='+currentApp.id:'/builder?new=1&template='+config.template;}
