@@ -161,7 +161,7 @@ body.designer-open{overflow:hidden}
 .ve-unpublish-link{background:transparent;border:0;color:#f0a1ae;font-size:10px;margin-top:17px}
 @media(max-width:560px){
  .ve-tools [data-device="tablet"],.ve-tools [data-device="desktop"]{display:none}
- .ve-export-web{display:none}
+ .ve-export-web{font-size:0;padding:0 8px}.ve-export-web::after{content:'ZIP';font-size:9px}.ve-tools [data-save]{font-size:0;padding:0 8px}.ve-tools [data-save]::after{content:'ذخیره';font-size:9px}
  .ve-tools [data-publish]{font-size:0;padding:0 8px}
  .ve-tools [data-publish]::after{content:"وب‌اپ";font-size:9px}
  .ve-tools [data-build]{font-size:0;padding:0 8px}
