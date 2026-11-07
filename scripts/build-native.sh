@@ -5,7 +5,7 @@ if [[ -z "$sdk_root" ]]; then echo "Android SDK is required" >&2; exit 1; fi
 "$sdk_root/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0" >/dev/null
 build_tools="$sdk_root/build-tools/35.0.0"
 android_jar="$sdk_root/platforms/android-35/android.jar"
-mkdir -p .native-build/classes .native-build/dex .native-build/resources
+mkdir -p android/res/drawable .native-build/classes .native-build/dex .native-build/resources
 node --input-type=module - <<'JS'
 import {appIcon} from './src/zip.mjs';import {writeFileSync} from 'node:fs';
 writeFileSync('android/res/drawable/icon.png',appIcon(512,'#ab8bff'));
