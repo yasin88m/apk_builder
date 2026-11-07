@@ -147,7 +147,7 @@ export async function openDesigner({root,user,lang='fa'}){
    '<div class="ve-layer-actions"><button data-move="'+i+'" data-dir="-1" '+(i===0?'disabled':'')+' title="بالا">↑</button><button data-move="'+i+'" data-dir="1" '+(i===blocks().length-1?'disabled':'')+' title="پایین">↓</button><button data-duplicate="'+esc(b.id)+'" title="تکثیر">⧉</button></div></div>').join('')||'<div class="ve-empty">هنوز المانی اضافه نشده است.<br>از کتابخانه یک المان انتخاب کن.</div>';
  }
  function input(label,key,value,type='text',attrs=''){
-  return '<label class="ve-field"><span>'+label+'</span><input type="'+type+'" data-prop="'+key+'" value="'+esc(value??'')+'" '+attrs+'></label>';
+  const attr=key.startsWith('global:')?'data-global="'+key.slice(7)+'"':'data-prop="'+key+'"';return '<label class="ve-field"><span>'+label+'</span><input type="'+type+'" '+attr+' value="'+esc(value??'')+'" '+attrs+'></label>';
  }
  function area(label,key,value){
   return '<label class="ve-field"><span>'+label+'</span><textarea data-prop="'+key+'" rows="4">'+esc(value??'')+'</textarea></label>';
@@ -156,7 +156,7 @@ export async function openDesigner({root,user,lang='fa'}){
   return '<label class="ve-field"><span>'+label+'</span><select data-prop="'+key+'">'+options.map(o=>'<option value="'+o[0]+'" '+(value===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>';
  }
  function upload(label,key,value){
-  return '<div class="ve-field"><span>'+label+'</span><label class="ve-upload"><input type="file" accept="image/png,image/jpeg,image/webp" data-image="'+key+'"><span>＋ بارگذاری تصویر</span></label>'+
+  const attr=key.startsWith('global:')?'data-global-image="'+key.slice(7)+'"':'data-image="'+key+'"';return '<div class="ve-field"><span>'+label+'</span><label class="ve-upload"><input type="file" accept="image/png,image/jpeg,image/webp" '+attr+'><span>＋ بارگذاری تصویر</span></label>'+
    (value?'<div class="ve-image-preview"><img src="'+esc(value)+'" alt=""><button data-clear-image="'+key+'">حذف تصویر</button></div>':'')+'</div>';
  }
  function inspectorHTML(){
@@ -253,9 +253,9 @@ export async function openDesigner({root,user,lang='fa'}){
    else if(b.dataset.mobilePanel){mobilePanel=mobilePanel===b.dataset.mobilePanel?'':b.dataset.mobilePanel;applyMobilePanel();}
    else if(b.dataset.device){device=b.dataset.device;document.querySelectorAll('[data-device]').forEach(x=>x.classList.toggle('active',x===b));document.getElementById('ve-device').className='ve-device '+device;}
    else if(b.hasAttribute('data-move')){const i=Number(b.dataset.move),n=i+Number(b.dataset.dir);if(n>=0&&n<blocks().length){checkpoint();[blocks()[i],blocks()[n]]=[blocks()[n],blocks()[i]];markDirty();renderLayers();}}
-   else if(b.dataset.duplicate){const source=blocks().find(x=>x.id===b.dataset.duplicate);if(source){const copy=clone(source);copy.id=makeId();const i=blocks().indexOf(source);blocks().splice(i+1,0,copy);selectedId=copy.id;checkpoint();markDirty();render();}}
+   else if(b.dataset.duplicate){const source=blocks().find(x=>x.id===b.dataset.duplicate);if(source){const copy=clone(source);copy.id=makeId();const i=blocks().indexOf(source);checkpoint();blocks().splice(i+1,0,copy);selectedId=copy.id;markDirty();render();}}
    else if(b.hasAttribute('data-delete-selected')){if(selectedId){checkpoint();config.builder.blocks=config.builder.blocks.filter(x=>x.id!==selectedId);selectedId=blocks()[0]?.id||null;markDirty();render();}}
-   else if(b.dataset.clearImage){const target=b.dataset.clearImage;if(target==='image'){const s=selected();if(s)s.image='';}else config[target]='';markDirty();renderInspector();}
+   else if(b.dataset.clearImage){const target=b.dataset.clearImage;if(target==='image'){const s=selected();if(s)s.image='';}else if(target.startsWith('global:'))config[target.slice(7)]='';else config[target]='';markDirty();renderInspector();}
    else if(b.dataset.palette){const p=palettes[Number(b.dataset.palette)];if(p){checkpoint();config.color=p[1];config.background=p[2];config.ink=p[3];markDirty();renderInspector();}}
    else if(b.hasAttribute('data-blank')){if(confirm('تمام المان‌های صفحه حذف شوند؟')){checkpoint();config.builder.blocks=[];selectedId=null;markDirty();render();}}
    else if(b.hasAttribute('data-add-selected')){addBlock('text');}
