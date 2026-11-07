@@ -153,7 +153,7 @@ export async function openDesigner({root,user,lang='fa'}){
   return '<label class="ve-field"><span>'+label+'</span><textarea data-prop="'+key+'" rows="4">'+esc(value??'')+'</textarea></label>';
  }
  function select(label,key,value,options){
-  return '<label class="ve-field"><span>'+label+'</span><select data-prop="'+key+'">'+options.map(o=>'<option value="'+o[0]+'" '+(value===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>';
+  const attr=key.startsWith('global:')?'data-global="'+key.slice(7)+'"':'data-prop="'+key+'"';return '<label class="ve-field"><span>'+label+'</span><select '+attr+'>'+options.map(o=>'<option value="'+o[0]+'" '+(value===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>';
  }
  function upload(label,key,value){
   const attr=key.startsWith('global:')?'data-global-image="'+key.slice(7)+'"':'data-image="'+key+'"';return '<div class="ve-field"><span>'+label+'</span><label class="ve-upload"><input type="file" accept="image/png,image/jpeg,image/webp" '+attr+'><span>＋ بارگذاری تصویر</span></label>'+
