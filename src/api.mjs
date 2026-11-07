@@ -1,6 +1,6 @@
-import {normalize} from '../public/model.js';
+import {normalize,esc} from '../public/model.js';
 import {buildAndroidAPK,newAndroidIdentity} from './android.mjs';
-import {appIcon} from './zip.mjs';
+import {appIcon,zipFiles} from './zip.mjs';
 const encoder=new TextEncoder();
 const random=()=>crypto.randomUUID().replaceAll('-','');
 const json=(data,status=200,headers={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...headers}});
@@ -9,6 +9,24 @@ async function digestBytes(bytes){return Array.from(new Uint8Array(await crypto.
 async function digest(s){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(s))),b=>b.toString(16).padStart(2,'0')).join('');}
 async function hash(password,salt){const key=await crypto.subtle.importKey('raw',encoder.encode(password),'PBKDF2',false,['deriveBits']);const bytes=await crypto.subtle.deriveBits({name:'PBKDF2',salt:encoder.encode(salt),iterations:100000,hash:'SHA-256'},key,256);return Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');}
 function equal(a,b){if(a.length!==b.length)return false;let out=0;for(let i=0;i<a.length;i++)out|=a.charCodeAt(i)^b.charCodeAt(i);return out===0;}
+
+function webManifest(config){
+ const c=normalize(config),iconType=c.appIcon.match(/^data:image\/(png|jpeg|webp);base64,/)?.[1]||'png';
+ return {name:c.appName||c.name,short_name:(c.appName||c.name).slice(0,24),description:c.description,start_url:'./',scope:'./',display:'standalone',background_color:c.background,theme_color:c.color,icons:[{src:'./icon.png',sizes:'512x512',type:'image/'+iconType,purpose:'any maskable'}]};
+}
+function webIcon(config){
+ const c=normalize(config),match=c.appIcon.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/);
+ return match?{bytes:Uint8Array.from(atob(match[2]),ch=>ch.charCodeAt(0)),type:'image/'+match[1]}:{bytes:appIcon(512,c.color),type:'image/png'};
+}
+function webPage(config){
+ const c=normalize(config),serialized=JSON.stringify(c).replace(/</g,'\\u003c');
+ return '<!doctype html><html lang="'+c.lang+'" dir="'+(c.lang==='en'?'ltr':'rtl')+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="'+esc(c.color)+'"><meta name="description" content="'+esc(c.description.slice(0,180))+'"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.png"><link rel="apple-touch-icon" href="./icon.png"><link rel="stylesheet" href="./font.css"><link rel="stylesheet" href="./mobile.css"><title>'+esc(c.name)+'</title></head><body><main id="mobile-app"></main><script id="app-config" type="application/json">'+serialized+'</script><script type="module">import{mountMobile}from"./mobile.js";import{normalize}from"./model.js";const c=normalize(JSON.parse(document.getElementById("app-config").textContent));mountMobile(c,document.getElementById("mobile-app"));if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});</script></body></html>';
+}
+function webServiceWorker(slug,publishedAt){
+ const cache='app-'+slug+'-'+publishedAt,files=['./','./mobile.js','./model.js','./mobile.css','./font.css','./manifest.webmanifest','./icon.png'];
+ return 'const CACHE='+JSON.stringify(cache)+',FILES='+JSON.stringify(files)+';self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting())));self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith("app-")&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}return response;}).catch(()=>caches.match("./"))));});';
+}
+
 export async function handle(request,store,assets,env={}){const url=new URL(request.url),path=url.pathname,method=request.method;const secure=url.protocol==='https:'?'; Secure':'';try{
  if(!['GET','HEAD','POST','PUT','DELETE'].includes(method))return json({error:'روش درخواست مجاز نیست.'},405);
  if(['POST','PUT','DELETE'].includes(method)){const origin=request.headers.get('origin');if(origin&&origin!==url.origin)fail('درخواست از مبدأ نامعتبر است.',403);if(request.headers.get('sec-fetch-site')==='cross-site')fail('درخواست مجاز نیست.',403);}
@@ -36,17 +54,41 @@ export async function handle(request,store,assets,env={}){const url=new URL(requ
  if(path==='/api/apps'&&method==='GET'){requireUser();const apps=(await store.list('app:')).filter(a=>a.owner===user.id);return json({apps:apps.map(a=>({...a,views:0}))});}
  if(path==='/api/apps'&&method==='POST'){requireUser();const existing=(await store.list('app:')).filter(a=>a.owner===user.id);if(existing.length>=30)fail('حداکثر ۳۰ پروژه می‌توانید بسازید.');const b=await body();const app={id:random(),owner:user.id,config:normalize(b.config),slug:null,createdAt:Date.now(),updatedAt:Date.now()};await store.set('app:'+app.id,app);return json({app},201);}
  const match=path.match(/^\/api\/apps\/([a-f\d]{32})(?:\/(apk|publish|unpublish|export))?$/);if(match){const app=await own(match[1]),action=match[2];
- if(['publish','unpublish','export'].includes(action))return json({error:'خروجی وب‌اپ حذف شده است. از گزینه ساخت و دانلود APK استفاده کنید.',code:'APK_ONLY'},410);
+ if(action==='publish'&&method==='POST'){
+   const publishedAt=Date.now(),record={appId:app.id,owner:app.owner,config:app.config,publishedAt};
+   if(app.slug)await store.set('published:'+app.slug,record);
+   else{let slug='';for(let i=0;i<5&&!slug;i++){const candidate=random().slice(0,12);if(await store.create('published:'+candidate,record))slug=candidate;}if(!slug)fail('ساخت لینک انتشار ناموفق بود؛ دوباره تلاش کنید.',503);app.slug=slug;}
+   app.updatedAt=publishedAt;await store.set('app:'+app.id,app);return json({app,url:url.origin+'/apps/'+app.slug+'/'});
+  }
+  if(action==='unpublish'&&method==='POST'){
+   if(app.slug)await store.del('published:'+app.slug);app.slug=null;app.updatedAt=Date.now();await store.set('app:'+app.id,app);return json({app});
+  }
+  if(action==='export'&&method==='GET'){
+   const files={'index.html':webPage(app.config),'mobile.js':assets['mobile.js']||'','model.js':assets['model.js']||'','mobile.css':assets['mobile.css']||'','font.css':assets['font.css']||'','manifest.webmanifest':JSON.stringify(webManifest(app.config),null,2),'sw.js':webServiceWorker('export-'+app.id,Date.now()),'icon.png':webIcon(app.config).bytes};
+   if(!files['mobile.js']||!files['model.js']||!files['mobile.css'])fail('فایل‌های وب‌اپ آماده نیستند.',503);
+   const archive=zipFiles(files);return new Response(archive,{headers:{'content-type':'application/zip','content-disposition':'attachment; filename="web-app-'+app.id.slice(0,8)+'.zip"','cache-control':'no-store','x-content-type-options':'nosniff'}});
+  }
  if(action==='apk'&&method==='POST'){
   if(!assets['android-runtime.json'])fail('موتور ساخت اندروید هنوز آماده نیست؛ چند دقیقه دیگر امتحان کنید.',503);
   let identity=await store.get('android-key:'+app.id);if(!identity){const fresh=await newAndroidIdentity(app.id);if(await store.create('android-key:'+app.id,fresh))identity=fresh;else identity=await store.get('android-key:'+app.id);}
   const apk=await buildAndroidAPK(app.config,assets,identity);app.apkBuilds=(app.apkBuilds||0)+1;app.lastBuiltAt=Date.now();await store.set('app:'+app.id,app);
   return new Response(apk,{headers:{'content-type':'application/vnd.android.package-archive','content-disposition':`attachment; filename="android-${app.id}.apk"`,'cache-control':'no-store','x-content-type-options':'nosniff','x-android-package':identity.packageName,'x-apk-sha256':await digestBytes(apk)}});
  }
- if(!action&&method==='GET')return json({app});if(!action&&method==='PUT'){const b=await body();app.config=normalize(b.config);app.updatedAt=Date.now();await store.set('app:'+app.id,app);return json({app});}
+ if(!action&&method==='GET')return json({app});if(!action&&method==='PUT'){const b=await body();app.config=normalize(b.config);app.updatedAt=Date.now();await store.set('app:'+app.id,app);if(app.slug)await store.set('published:'+app.slug,{appId:app.id,owner:app.owner,config:app.config,publishedAt:app.updatedAt});return json({app});}
  if(!action&&method==='DELETE'){if(app.slug){await store.del('published:'+app.slug);await store.del('slug:'+app.slug);}await store.del('android-key:'+app.id);await store.del('app:'+app.id);return json({ok:true});}}
- if(path==='/api/admin'){requireUser();if(user.role!=='admin')fail('دسترسی شما به این صفحه مجاز نیست.',403);const users=await store.list('user:'),apps=await store.list('app:');return json({users:users.map(publicUser),apps:await Promise.all(apps.map(async a=>({id:a.id,owner:a.owner,name:a.config.name,template:a.config.template,slug:null,apkBuilds:a.apkBuilds||0,views:0,createdAt:a.createdAt}))),counts:{users:users.length,apps:apps.length,builds:apps.reduce((n,a)=>n+(a.apkBuilds||0),0),published:0}});}
- if(path.startsWith('/apps/')){if(path.endsWith('/sw.js'))return new Response("self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.registration.unregister().then(()=>self.clients.claim())));",{headers:{'content-type':'text/javascript','cache-control':'no-store'}});return new Response('خروجی وب‌اپ غیرفعال شده است. فایل APK را از اپلیکیشن‌ساز دریافت کنید.',{status:410,headers:{'content-type':'text/plain; charset=utf-8'}});}
+ if(path==='/api/admin'){requireUser();if(user.role!=='admin')fail('دسترسی شما به این صفحه مجاز نیست.',403);const users=await store.list('user:'),apps=await store.list('app:');return json({users:users.map(publicUser),apps:await Promise.all(apps.map(async a=>({id:a.id,owner:a.owner,name:a.config.name,template:a.config.template,slug:a.slug||null,apkBuilds:a.apkBuilds||0,views:0,createdAt:a.createdAt}))),counts:{users:users.length,apps:apps.length,builds:apps.reduce((n,a)=>n+(a.apkBuilds||0),0),published:apps.filter(a=>!!a.slug).length}});}
+ if(path.startsWith('/apps/')){
+   const matchPublic=path.match(/^\/apps\/([a-z0-9-]{6,40})(?:\/(.*))?$/i);if(!matchPublic)return new Response('Not found',{status:404});
+   const slug=matchPublic[1],resource=matchPublic[2]||'',published=await store.get('published:'+slug);if(!published)return new Response('این وب‌اپ منتشر نشده یا لینک آن معتبر نیست.',{status:404,headers:{'content-type':'text/plain; charset=utf-8'}});
+   const config=normalize(published.config),noStore={'cache-control':'no-store','x-content-type-options':'nosniff'};
+   if(!path.endsWith('/')&&!resource)return new Response(null,{status:302,headers:{location:'/apps/'+slug+'/',...noStore}});
+   if(resource===''||resource==='index.html')return new Response(webPage(config),{headers:{'content-type':'text/html; charset=utf-8',...noStore}});
+   if(resource==='manifest.webmanifest')return new Response(JSON.stringify(webManifest(config)),{headers:{'content-type':'application/manifest+json; charset=utf-8','cache-control':'public, max-age=300'}});
+   if(resource==='sw.js')return new Response(webServiceWorker(slug,published.publishedAt||0),{headers:{'content-type':'text/javascript; charset=utf-8','cache-control':'no-cache','service-worker-allowed':'/apps/'+slug+'/'}});
+   if(resource==='icon.png'){const icon=webIcon(config);return new Response(icon.bytes,{headers:{'content-type':icon.type,'cache-control':'public, max-age=86400'}});}
+   if(['mobile.js','model.js','mobile.css','font.css'].includes(resource)&&assets[resource])return new Response(assets[resource],{headers:{'content-type':resource.endsWith('.js')?'text/javascript; charset=utf-8':'text/css; charset=utf-8','cache-control':'public, max-age=3600'}});
+   return new Response('Not found',{status:404});
+  }
  if(path.startsWith('/api/'))fail('مسیر پیدا نشد.',404);
  if(path==='/admin'&&(!user||user.role!=='admin'))return new Response('<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/font.css"><body style="font-family:Vazirmatn,Tahoma;background:#100f18;color:#fff;text-align:center;padding:15vh 20px"><h1>دسترسی شما به این صفحه مجاز نیست.</h1><p>برای مشاهده پنل، با حساب مدیر وارد شوید.</p><a style="color:#b9a7ff" href="/account">ورود به حساب کاربری</a></body></html>',{status:403,headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store'}});
  return null;
