@@ -46,17 +46,19 @@ function defaultBlocks(c){
 }
 function clone(v){return JSON.parse(JSON.stringify(v));}
 function safeColor(v){return /^#[0-9a-f]{6}$/i.test(v||'')?v:'';}
-function fileData(file){
+function fileData(file,options={}){
  return new Promise((resolve,reject)=>{
   if(!file||!/^image\/(png|jpeg|webp)$/.test(file.type)){reject(new Error('فقط تصویر PNG، JPG یا WebP انتخاب کنید.'));return;}
   if(file.size>12*1024*1024){reject(new Error('حجم تصویر بیشتر از ۱۲ مگابایت است.'));return;}
   const img=new Image(),reader=new FileReader();
   reader.onerror=()=>reject(new Error('خواندن تصویر ناموفق بود.'));
   reader.onload=()=>{img.onerror=()=>reject(new Error('تصویر قابل خواندن نیست.'));img.onload=()=>{
-   const scale=Math.min(1,1200/Math.max(img.width,img.height)),canvas=document.createElement('canvas');
-   canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));
-   canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-   resolve(canvas.toDataURL('image/webp',.82));
+   const square=!!options.square,format=options.format||'image/webp',scale=Math.min(1,1200/Math.max(img.width,img.height)),canvas=document.createElement('canvas');
+   canvas.width=square?512:Math.max(1,Math.round(img.width*scale));canvas.height=square?512:Math.max(1,Math.round(img.height*scale));
+   const ctx=canvas.getContext('2d');
+   if(square){const side=Math.min(img.width,img.height),sx=(img.width-side)/2,sy=(img.height-side)/2;ctx.drawImage(img,sx,sy,side,side,0,0,512,512);}
+   else ctx.drawImage(img,0,0,canvas.width,canvas.height);
+   resolve(canvas.toDataURL(format,.82));
   };img.src=reader.result;};
   reader.readAsDataURL(file);
  });
@@ -242,7 +244,7 @@ export async function openDesigner({root,user,lang='fa'}){
   const el=e.target;
   try{
    if(el.dataset.image){const data=await fileData(el.files[0]);checkpoint();const b=selected();if(b)b[el.dataset.image]=data;markDirty();renderInspector();}
-   if(el.dataset.globalImage){const data=await fileData(el.files[0]);checkpoint();config[el.dataset.globalImage]=data;markDirty();renderInspector();}
+   if(el.dataset.globalImage){const key=el.dataset.globalImage,data=await fileData(el.files[0],key==='appIcon'?{format:'image/png',square:true}:{});checkpoint();config[key]=data;markDirty();renderInspector();}
   }catch(err){notify(err.message);}
  });
  root.addEventListener('click',async e=>{
