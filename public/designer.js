@@ -159,6 +159,9 @@ export async function openDesigner({root,user,lang='fa'}){
   if(multiline)return '<label class="ve-field ve-item-field"><span>'+label+'</span><textarea rows="3" data-item-index="'+index+'" data-item-field="'+field+'">'+esc(value??'')+'</textarea></label>';
   return '<label class="ve-field ve-item-field"><span>'+label+'</span><input type="text" data-item-index="'+index+'" data-item-field="'+field+'" value="'+esc(value??'')+'"></label>';
  }
+ function listField(group,index,field,label,value,multiline=false){
+  const tag=multiline?'textarea':'input',attr=multiline?' rows="3"':' type="text"';return '<label class="ve-field"><span>'+label+'</span><'+tag+attr+' data-list-group="'+group+'" data-list-index="'+index+'" data-list-field="'+field+'">'+(multiline?esc(value??''):'')+'</'+tag+(multiline?'':' value="'+esc(value??'')+'"')+'></label>';
+ }
  function select(label,key,value,options){
   const attr=key.startsWith('global:')?'data-global="'+key.slice(7)+'"':'data-prop="'+key+'"';return '<label class="ve-field"><span>'+label+'</span><select '+attr+'>'+options.map(o=>'<option value="'+o[0]+'" '+(value===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>';
  }
@@ -185,7 +188,9 @@ export async function openDesigner({root,user,lang='fa'}){
    if(['hero','contact','button'].includes(b.type))html+=input('متن دکمه','buttonText',b.buttonText);
    if(['hero','image','logo'].includes(b.type))html+=upload('تصویر المان','image',b.image);
    if(b.type==='featured')html+='<div class="ve-group ve-items-manager"><div class="ve-items-head"><h3>محتوای محصولات و خدمات</h3><button class="ve-add-item" data-add-item>＋ افزودن</button></div><p class="ve-help">این موارد مستقیماً در کارت‌های اپلیکیشن نمایش داده می‌شوند.</p>'+(config.items||[]).map((item,i)=>'<div class="ve-item-card"><div class="ve-item-card-head"><b>مورد '+(i+1)+'</b><button data-delete-item="'+i+'" class="ve-item-remove">حذف</button></div>'+itemField(i,'title','نام محصول / خدمت',item.title)+itemField(i,'category','دسته‌بندی',item.category)+itemField(i,'price','قیمت یا توضیح قیمت',item.price)+itemField(i,'description','توضیحات',item.description,true)+'<label class="ve-upload ve-item-upload"><input type="file" accept="image/png,image/jpeg,image/webp" data-item-image="'+i+'">＋ تغییر تصویر</label>'+(item.image?'<div class="ve-image-preview"><img src="'+esc(item.image)+'" alt=""><button data-clear-item-image="'+i+'">حذف تصویر</button></div>':'')+'</div>').join('')+'</div>';
-   if(b.type==='gallery')html+='<div class="ve-help">تصاویر گالری را در بخش محتوای اصلی اضافه کنید.</div>';
+   if(b.type==='gallery')html+='<div class="ve-group"><div class="ve-items-head"><h3>تصاویر گالری</h3><span>'+(config.gallery||[]).length+'/12</span></div><label class="ve-upload"><input type="file" accept="image/png,image/jpeg,image/webp" data-gallery-image>＋ افزودن تصویر</label><div class="ve-gallery-grid">'+(config.gallery||[]).map((src,i)=>'<div><img src="'+esc(src)+'" alt=""><button data-delete-gallery="'+i+'">×</button></div>').join('')+'</div></div>';
+   if(b.type==='reviews')html+='<div class="ve-group"><div class="ve-items-head"><h3>دیدگاه مشتریان</h3><button class="ve-add-item" data-add-list="reviews">＋ افزودن</button></div>'+(config.reviews||[]).map((item,i)=>'<div class="ve-item-card"><div class="ve-item-card-head"><b>دیدگاه '+(i+1)+'</b><button class="ve-item-remove" data-delete-list="reviews:'+i+'">حذف</button></div>'+listField('reviews',i,'name','نام مشتری',item.name)+listField('reviews',i,'text','متن دیدگاه',item.text,true)+'</div>').join('')+'</div>';
+   if(b.type==='plans')html+='<div class="ve-group"><div class="ve-items-head"><h3>پلن‌ها و تعرفه‌ها</h3><button class="ve-add-item" data-add-list="plans">＋ افزودن</button></div>'+(config.plans||[]).map((item,i)=>'<div class="ve-item-card"><div class="ve-item-card-head"><b>پلن '+(i+1)+'</b><button class="ve-item-remove" data-delete-list="plans:'+i+'">حذف</button></div>'+listField('plans',i,'title','عنوان پلن',item.title)+listField('plans',i,'price','قیمت',item.price)+listField('plans',i,'features','امکانات پلن',item.features,true)+'</div>').join('')+'</div>';
    return html;
   }
   if(inspectorTab==='style'){
@@ -245,6 +250,7 @@ export async function openDesigner({root,user,lang='fa'}){
   if(el.dataset.prop){checkpoint();setProp(el.dataset.prop,el.type==='checkbox'?el.checked:el.value);renderLayers();}
   if(el.dataset.global){checkpoint();applyGlobal(el.dataset.global,el.value);markDirty();}
   if(el.dataset.itemIndex!==undefined){const item=config.items?.[Number(el.dataset.itemIndex)];if(item){checkpoint();item[el.dataset.itemField]=String(el.value).slice(0,el.dataset.itemField==='description'?3000:150);markDirty();}}
+  if(el.dataset.listGroup){const item=config[el.dataset.listGroup]?.[Number(el.dataset.listIndex)];if(item){checkpoint();item[el.dataset.listField]=String(el.value).slice(0,1000);markDirty();}}
  });
  root.addEventListener('change',async e=>{
   const el=e.target;
@@ -252,6 +258,7 @@ export async function openDesigner({root,user,lang='fa'}){
    if(el.dataset.image){const data=await fileData(el.files[0]);checkpoint();const b=selected();if(b)b[el.dataset.image]=data;markDirty();renderInspector();}
    if(el.dataset.globalImage){const key=el.dataset.globalImage,data=await fileData(el.files[0],key==='appIcon'?{format:'image/png',square:true}:{});checkpoint();config[key]=data;markDirty();renderInspector();}
    if(el.dataset.itemImage!==undefined){const data=await fileData(el.files[0]);const item=config.items?.[Number(el.dataset.itemImage)];if(item){checkpoint();item.image=data;markDirty();renderInspector();}}
+   if(el.hasAttribute('data-gallery-image')){if((config.gallery||[]).length>=12)throw new Error('حداکثر ۱۲ تصویر برای گالری مجاز است.');const data=await fileData(el.files[0]);checkpoint();config.gallery=config.gallery||[];config.gallery.push(data);markDirty();renderInspector();}
   }catch(err){notify(err.message);}
  });
  root.addEventListener('click',async e=>{
@@ -261,6 +268,9 @@ export async function openDesigner({root,user,lang='fa'}){
    else if(b.hasAttribute('data-add-item')){if((config.items||[]).length>=30)throw new Error('حداکثر ۳۰ محصول یا خدمت می‌توانید اضافه کنید.');checkpoint();config.items=config.items||[];config.items.push({id:makeId(),title:'محصول یا خدمت جدید',description:'توضیحات محصول یا خدمت',price:'تماس بگیرید',category:'عمومی',image:'',art:'house'});markDirty();renderInspector();}
    else if(b.dataset.deleteItem!==undefined){checkpoint();config.items.splice(Number(b.dataset.deleteItem),1);markDirty();renderInspector();}
    else if(b.dataset.clearItemImage!==undefined){checkpoint();const item=config.items?.[Number(b.dataset.clearItemImage)];if(item)item.image='';markDirty();renderInspector();}
+   else if(b.dataset.deleteGallery!==undefined){checkpoint();config.gallery.splice(Number(b.dataset.deleteGallery),1);markDirty();renderInspector();}
+   else if(b.dataset.addList){const type=b.dataset.addList,limit=type==='reviews'?5:3;if((config[type]||[]).length>=limit)throw new Error('به حداکثر تعداد مجاز رسیده‌اید.');checkpoint();config[type]=config[type]||[];config[type].push(type==='reviews'?{name:'مشتری جدید',text:'متن دیدگاه مشتری'}:{title:'پلن جدید',price:'تماس بگیرید',features:'امکانات پلن'});markDirty();renderInspector();}
+   else if(b.dataset.deleteList){const [type,index]=b.dataset.deleteList.split(':');checkpoint();config[type]?.splice(Number(index),1);markDirty();renderInspector();}
    else if(b.dataset.select){selectBlock(b.dataset.select);mobilePanel='inspector';applyMobilePanel();}
    else if(b.dataset.inspectorTab){inspectorTab=b.dataset.inspectorTab;renderInspector();}
    else if(b.dataset.mobilePanel){mobilePanel=mobilePanel===b.dataset.mobilePanel?'':b.dataset.mobilePanel;applyMobilePanel();}
