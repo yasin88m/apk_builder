@@ -1,0 +1,1 @@
+{"name":"apk-builder","version":"1.0.0","private":true,"type":"module","scripts":{"dev":"node --env-file-if-exists=.env server.mjs","start":"node --env-file-if-exists=.env server.mjs","build":"node scripts/build.mjs","check":"node scripts/check.mjs","test":"node --test"},"engines":{"node":">=22"}}
