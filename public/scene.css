@@ -5,3 +5,5 @@
 .scene-runtime>.scene-node[data-node-position=fixed]{max-width:var(--scene-display-width,100vw);margin-inline:auto}
 /* Horizontal overflow must not create a non-scrolling ancestor for sticky layers. */
 .scene-runtime{overflow:visible}@supports(overflow:clip){.scene-runtime{overflow-x:clip;overflow-y:visible}}
+
+.app-svg-icon{display:inline-block;flex-shrink:0;vertical-align:middle;pointer-events:none}.scene-icon{display:flex;align-items:center;justify-content:center}.scene-icon>.app-svg-icon{width:100%;height:100%}.scene-button>button,.scene-button>a{gap:var(--scene-icon-gap,8px)}

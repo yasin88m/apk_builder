@@ -1,0 +1,48 @@
+Untitled UI Icons FREE — @untitledui/icons 0.0.23
+Copyright (c) 2025 Untitled UI
+Source: https://github.com/untitleduico/icons
+Source commit: 652b84bc86ee0738dc8c1fecb2c92b696075ed0c
+Package: https://www.npmjs.com/package/@untitledui/icons
+Official free-package licensing declaration:
+https://www.untitledui.com/react/docs/icons#are-untitled-ui-icons-free
+"Yes, the @untitledui/icons package is free and MIT licensed."
+Package metadata also declares MIT. Only FREE line icons are included; no PRO assets.
+The upstream repository/package LICENSE additionally contains the following text,
+retained here verbatim because it differs from the package's MIT declaration:
+
+License
+
+You are allowed to:
+
+• Use the icons in personal and commercial projects
+
+You are not allowed to:
+
+• Sell, sublicense, or distribute the icons (in original or modified form)
+• Create derivative icon libraries based on the icons
+• Use the icons in any form of UI kit, library, or template intended for resale
+
+Please read the full License Agreement at untitledui.com/license
+
+© 2025 Untitled UI
+
+MIT License (declared by the official documentation and package metadata)
+Copyright (c) 2025 Untitled UI
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
