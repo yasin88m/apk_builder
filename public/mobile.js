@@ -1,10 +1,11 @@
 import {appIconPaths,renderAppIcon} from './icons.js';
-import {mountScene} from './scene.js';
+import {mountScene,sceneFromConfig} from './scene.js';
 import {esc,artURL,templates,safeURL} from './model.js';
 const mobileIconNames={home:'home-01',grid:'grid-01',heart:'heart',user:'user-01',search:'search-lg',arrow:'arrow-right',phone:'phone',mail:'mail-01',pin:'marker-pin-01',bag:'shopping-bag-01'};
 export const icons=Object.fromEntries(Object.entries(mobileIconNames).map(([name,id])=>[name,appIconPaths[id]]));
 export const icon=n=>renderAppIcon(mobileIconNames[n]||mobileIconNames.grid).replace('class="app-svg-icon"','class="icon app-svg-icon"');
 export function mountMobile(c,root,{editing=false}={}){
+ if(['shopcart','brewbliss','swimshop'].includes(c.template)&&!c.scene?.enabled&&!c.builder?.enabled)c.scene=sceneFromConfig(c);
  if(c.scene?.enabled){mountScene(c.scene,root);return;}
 
  const en=c.lang==='en',t=(fa,eng)=>en?eng:fa,kind=c.template,service=kind==='servly',edu=kind==='eduboss',art=kind==='artstore',shop=art||kind==='sport';
