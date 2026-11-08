@@ -25,6 +25,13 @@ https://apk-builder.mohammadyasinmisaqpoor.workers.dev/
 - `scene.js` مدل، اعتبارسنجی و رندر مشترک ادیتور و خروجی است؛ `scene.css` و رندرر در APK و ZIP قرار می‌گیرند. ابزار ادیتور وارد اپ خروجی نمی‌شود.
 - سقف پروژه ۲۰ صفحه و ۶۰۰ لایه، عمق تو در تو ۱۲، اندازه المان تا ۱۰٬۰۰۰ پیکسل و قلم تا ۵۱۲ پیکسل است.
 
+
+### المان‌های تعاملی و موقعیت
+
+کتابخانه و لایه‌ها در سمت راست و تنظیمات در سمت چپ نمایش داده می‌شوند. حالت‌های موقعیت خودکار، عادی، مطلق، ثابت و چسبان با اتصال به شش لبه و فاصله از چهار سمت پشتیبانی می‌شوند. منوی پایین از حالت ثابت به پایین نمایشگر استفاده می‌کند؛ چسبان رفتار CSS sticky داخل والد دارد. لایه‌های ثابت هنگام اجرا بیرون از والدهای چرخیده یا مقیاس‌خورده قرار می‌گیرند.
+
+منوی همبرگری، منوی پایین، اسلایدر/اسلاید، هیرو و فرم از لایه‌های تو در تو ساخته می‌شوند. آیتم‌ها، اسلایدها، فیلدها و متن‌ها قابل انتخاب، تکثیر و ویرایش مستقل‌اند. اسلایدر فلش، نقطه، کشیدن لمسی و پخش خودکار قابل تنظیم دارد. فرم تکمیل اجباری و نوع فیلد را اعتبارسنجی می‌کند؛ پاسخ‌ها بنا به تنظیم سازنده روی دستگاه بازدیدکننده ذخیره می‌شوند یا پیش‌نویس ایمیل باز می‌شود. ارسال خودکار به سرور پیاده‌سازی نشده است. پیش‌نمایش فرم هیچ پاسخی ارسال یا ذخیره نمی‌کند.
+
 ## فایل اندروید
 
 - اندروید ۷ (API 24) و بالاتر، با Android System WebView به‌روز.
@@ -73,3 +80,9 @@ npm run build
 ```
 
 تست‌ها ورود، جداسازی مالکیت، حذف خروجی وب، گواهی RSA، ساخت APK واقعی، فایل DEX، نام و شناسه در manifest، امضای v2، تراز منابع، حفظ امضای نسخه بعدی و رد موتور دستکاری‌شده را بررسی می‌کنند.
+
+### SVG icons and editor shortcuts
+
+The Persian RTL studio includes the official FREE line collection from `@untitledui/icons` 0.0.23 (1,173 icons). Use the **آیکون** element or select a button and open **انتخاب آیکون**. Search accepts English names and common Persian terms. Standalone icons scale with their layer; buttons expose size, stroke, gap, color and RTL before/after placement. The mobile interface and editor controls use the same family. Icons and `icons-NOTICE.txt` are included in hosted apps, ZIP exports, service-worker caches and offline APK assets. Provenance and the upstream licensing declarations are preserved in `public/icons-NOTICE.txt`.
+
+Ctrl/Cmd+C and Ctrl/Cmd+V copy and paste selected root layers and their descendants using a bounded, normalized clipboard document. Text fields keep native clipboard behavior. Physical key codes also support Persian keyboard layouts. Hold Alt while dragging to duplicate once after crossing the drag threshold; releasing commits one undo step, and Escape or pointer cancellation restores the original scene. Alt-click alone creates no duplicate.
