@@ -1,6 +1,6 @@
 import {templates,palettes,demo,normalize,esc,artURL} from './model.js';
 import {icon} from './mobile.js';
-import {openDesigner} from './designer.js';
+import {openDesigner} from './studio.js';
 const root=document.getElementById('site');let lang=localStorage.getItem('builder-lang')||'fa',user=null,step=0,config=null,currentApp=null,saveBusy=false,changed=false,previewTimer,toastTimer;
 const t=(fa,en)=>lang==='en'?en:fa;
 const strings={title:t('اپلیکیشن ساز','App Builder')};

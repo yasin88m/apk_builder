@@ -7,7 +7,7 @@ import {handle} from '../src/api.mjs';
 import {d1Store} from '../src/store.mjs';
 import {demo} from '../public/model.js';
 import {newAndroidIdentity,from64,buildAndroidAPK,zipEntries,nativeHTML} from '../src/android.mjs';
-const assets=Object.fromEntries(await Promise.all(['font.css','mobile.css','mobile.js','model.js','android-runtime.json'].map(async f=>[f,await readFile(new URL('../public/'+f,import.meta.url),'utf8').catch(e=>{if(e.code==='ENOENT')return undefined;throw e;})])));
+const assets=Object.fromEntries(await Promise.all(['font.css','mobile.css','mobile.js','model.js','scene.js','scene.css','android-runtime.json'].map(async f=>[f,await readFile(new URL('../public/'+f,import.meta.url),'utf8').catch(e=>{if(e.code==='ENOENT')return undefined;throw e;})])));
 function storage(){const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE records (key TEXT PRIMARY KEY, value TEXT NOT NULL)');return d1Store({prepare(sql){let args=[];return {bind(...a){args=a;return this;},async first(){return db.prepare(sql).get(...args)||null;},async all(){return {results:db.prepare(sql).all(...args)};},async run(){return {meta:db.prepare(sql).run(...args)};}};}});}
 function client(store,env={}){let cookie='';return async(path,method='GET',body,extra={})=>{const response=await handle(new Request('https://studio.test'+path,{method,headers:{cookie,'content-type':'application/json',...extra},...(body!==undefined?{body:JSON.stringify(body)}:{})}),store,assets,env);if(response?.headers.has('set-cookie'))cookie=response.headers.get('set-cookie').split(';')[0];return response;};}
 const signup=(call,email)=>call('/api/register','POST',{name:'آزمون',email,password:'test-password-123'});
