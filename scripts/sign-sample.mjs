@@ -1,7 +1,7 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import {newAndroidIdentity,buildAndroidAPK} from '../src/android.mjs';
 import {demo} from '../public/model.js';
-const assets=Object.fromEntries(await Promise.all(['font.css','mobile.css','mobile.js','model.js','scene.js','scene.css','android-runtime.json'].map(async name=>[name,await readFile('public/'+name,'utf8')])));
+const assets=Object.fromEntries(await Promise.all(['font.css','mobile.css','mobile.js','model.js','scene.js','scene.css','icons.js','icons-NOTICE.txt','android-runtime.json'].map(async name=>[name,await readFile('public/'+name,'utf8')])));
 const identity=await newAndroidIdentity('0123456789abcdef0123456789abcdef');
 const config=demo('artstore');config.name='نمونه اپلیکیشن اندروید';
 await writeFile('.native-build/sample.apk',await buildAndroidAPK(config,assets,identity,{versionCode:100}));
