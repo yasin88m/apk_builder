@@ -1,7 +1,10 @@
+import {mountScene} from './scene.js';
 import {esc,artURL,templates,safeURL} from './model.js';
 export const icons={home:'<path d="M3 10l9-7 9 7v10H15v-7H9v7H3z"/>',grid:'<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',heart:'<path d="M20 5c-3-3-7-1-8 1-1-2-5-4-8-1-5 5 3 11 8 15 5-4 13-10 8-15z"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-3a8 8 0 0116 0v3"/>',search:'<circle cx="10" cy="10" r="6"/><path d="M15 15l6 6"/>',arrow:'<path d="M5 12h14m-7-7l7 7-7 7"/>',phone:'<path d="M5 3h4l2 5-3 2c2 3 3 4 6 6l2-3 5 2v4c0 6-20-8-18-14z"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 6l9 7 9-7"/>',pin:'<path d="M19 10c0 6-7 11-7 11S5 16 5 10a7 7 0 1114 0z"/><circle cx="12" cy="10" r="2"/>'};
 export const icon=n=>`<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${icons[n]||icons.grid}</svg>`;
 export function mountMobile(c,root,{editing=false}={}){
+ if(c.scene?.enabled){mountScene(c.scene,root);return;}
+
  const en=c.lang==='en',t=(fa,eng)=>en?eng:fa,kind=c.template,service=kind==='servly',edu=kind==='eduboss',art=kind==='artstore',shop=art||kind==='sport';
  const key='app-state:'+c.name;let saved={};try{saved=JSON.parse(localStorage.getItem(key)||'{}')||{};}catch{}
  let favorites=Array.isArray(saved.favorites)?saved.favorites:[],cart=saved.cart&&typeof saved.cart==='object'?saved.cart:{},tab='home',query='',category='',detail=null,quantity=1,detailTab='description';
