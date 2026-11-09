@@ -1,0 +1,13 @@
+name = "apk-builder"
+main = "dist/server/index.js"
+compatibility_date = "2026-11-07"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "apk-builder-data"
+database_id = "b5c68d38-b82b-4522-b8dc-4e8db684e938"
+
+[observability]
+enabled = true
