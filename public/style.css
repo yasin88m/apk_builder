@@ -4,3 +4,12 @@ body{overflow-x:clip}.hero>div{min-width:0}.hero{clip-path:inset(-10px -45px -10
 
 /* Real template previews match the packaged Android renderer. */
 .phone .mini-preview{position:absolute;top:19px;right:0;width:360px;height:740px;border:0;transform:scale(.656);transform-origin:top right;pointer-events:none;background:white}.template-stage .phone .mini-preview{transform:scale(.605)}.palette{position:relative;min-height:44px}.palette.selected{outline:2px solid var(--accent);outline-offset:3px}
+
+/* Lightweight landing previews: avoid booting seven independent WebViews/iframes. */
+.mini-product-art{height:78px;border-radius:9px;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 38%,#ffffff 0 12%,transparent 13%),linear-gradient(145deg,color-mix(in srgb,var(--app-color),white 72%),color-mix(in srgb,var(--app-color),black 7%));}
+.mini-product-art:before{content:'';position:absolute;width:54px;height:34px;left:50%;top:24px;transform:translateX(-50%) rotate(-12deg);border-radius:12px 18px 9px 14px;background:linear-gradient(145deg,#fff,#d8d4e4);box-shadow:0 7px 12px #17102525;}
+.mini-product-art.art-1{background:radial-gradient(circle at 50% 40%,#f4d6a6 0 17%,transparent 18%),linear-gradient(145deg,#f6e8d7,#d8b48b);}
+.mini-product-art.art-1:before{width:32px;height:32px;top:20px;border-radius:50%;background:radial-gradient(circle at 50% 40%,#f4d6a6 0 40%,#fff 42% 60%,#8a5435 62%);box-shadow:0 6px 12px #4b2c1b30;}
+.mini-banner:after{content:'';position:absolute;width:110px;height:110px;left:-24px;bottom:-32px;border-radius:35% 65% 55% 45%;transform:rotate(-24deg);background:linear-gradient(145deg,color-mix(in srgb,var(--app-color),white 15%),color-mix(in srgb,var(--app-color),black 15%));opacity:.8;box-shadow:0 12px 24px #0002;}
+.mini-banner strong,.mini-banner span{z-index:1;}
+.mini-app{position:relative;}
