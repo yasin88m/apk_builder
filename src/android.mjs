@@ -57,10 +57,10 @@ function nativeMobileBundle(assets){
   const source=assets[file];
   if(typeof source!=='string'||!source)throw new Error('Missing offline Android module: '+file);
   return source
-   .replace(/^import\\s+.*?;\\s*$/gm,'')
-   .replace(/^export\\s*\\{[^}]*\\};?\\s*$/gm,'')
-   .replace(/^export\\s+(?=(?:const|let|var|function|async\\s+function|class)\\b)/gm,'');
- }).join('\\n');
+   .replace(/^import\s+.*?;\s*$/gm,'')
+   .replace(/^export\s*\{[^}]*\};?\s*$/gm,'')
+   .replace(/^export\s+(?=(?:const|let|var|function|async\s+function|class)\b)/gm,'');
+ }).join('\n');
 }
 export async function buildAndroidAPK(config,assets,identity,{versionCode=Math.floor(Date.now()/1000)-1700000000}={}){
  const runtime=JSON.parse(assets['android-runtime.json']||'null');if(!runtime?.apk)throw Object.assign(new Error('موتور ساخت اندروید هنوز آماده نشده است.'),{status:503});const base=from64(runtime.apk);const actual=Array.from(await sha256(base),b=>b.toString(16).padStart(2,'0')).join('');if(actual!==runtime.sha256)throw new Error('Android runtime checksum failed');
