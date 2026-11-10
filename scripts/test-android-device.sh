@@ -29,12 +29,13 @@ timeout 15s adb shell svc wifi disable
 timeout 15s adb shell svc data disable
 adb logcat -c
 start_app
-wait_for_ui 'منتخبِ مجموعه' .native-build/device-ui.xml
+wait_for_ui 'محصولات منتخب' .native-build/device-ui.xml
 adb exec-out screencap -p > .native-build/sample-screen.png
 adb logcat -d -v time > .native-build/device-log.txt
 timeout 40s adb install -r .native-build/sample-updated.apk
+adb shell dumpsys package "$package_name" | grep -q 'versionCode=101'
 start_app
-wait_for_ui 'نسخه دوم برنامه' .native-build/updated-ui.xml
+wait_for_ui 'محصولات منتخب' .native-build/updated-ui.xml
 for template in servly eduboss sport; do
  timeout 40s adb install -r ".native-build/$template.apk"
  start_app
