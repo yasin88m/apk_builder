@@ -37,7 +37,11 @@ public class MainActivity extends Activity {
         view.setWebViewClient(new WebViewClient() {
             @Override public WebResourceResponse shouldInterceptRequest(WebView w, WebResourceRequest request) {
                 Uri uri = request.getUrl();
-                if (!HOST.equals(uri.getHost()) || !"https".equals(uri.getScheme())) return denied();
+                android.util.Log.i("WebViewRuntime", "Intercept request: " + uri);
+                if (!HOST.equals(uri.getHost()) || !"https".equals(uri.getScheme())) {
+                    android.util.Log.w("WebViewRuntime", "Rejected origin: " + uri);
+                    return denied();
+                }
                 String path = uri.getPath();
                 if (path == null || path.contains("..") || !path.startsWith("/assets/")) return denied();
                 String filename = path.substring(8);
