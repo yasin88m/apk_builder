@@ -4,7 +4,7 @@ package_name=ir.apkb.a0123456789abcdef0123456789abcdef
 capture_failure() {
  if [[ "$?" != 0 ]]; then
   timeout 10s adb exec-out screencap -p > .native-build/failure-screen.png || true
-  timeout 10s adb logcat -d -s AndroidRuntime chromium ActivityManager WebViewConsole WebViewRuntime > .native-build/device-log.txt || true
+  timeout 10s adb logcat -d -v time > .native-build/device-log.txt || true
  fi
 }
 trap capture_failure EXIT
@@ -31,7 +31,7 @@ adb logcat -c
 start_app
 wait_for_ui 'منتخبِ مجموعه' .native-build/device-ui.xml
 adb exec-out screencap -p > .native-build/sample-screen.png
-adb logcat -d -s AndroidRuntime chromium WebViewConsole WebViewRuntime > .native-build/device-log.txt
+adb logcat -d -v time > .native-build/device-log.txt
 timeout 40s adb install -r .native-build/sample-updated.apk
 start_app
 wait_for_ui 'نسخه دوم برنامه' .native-build/updated-ui.xml
