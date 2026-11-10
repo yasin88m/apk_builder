@@ -50,7 +50,7 @@ export async function signAndroidAPK(unsigned,identity){
  const footer=unsigned.slice(eocdOffset);new DataView(footer.buffer).setUint32(16,centralOffset+block.length,true);
  return concat(unsigned.subarray(0,centralOffset),block,unsigned.subarray(centralOffset,eocdOffset),footer);
 }
-export function nativeHTML(config){const c=normalize(config);return `<!doctype html><html data-native lang="${c.lang}" dir="${c.lang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(c.name)}</title><link rel="stylesheet" href="./font.css"><link rel="stylesheet" href="./mobile.css"><link rel="stylesheet" href="./scene.css"></head><body><main id="mobile-app"></main><script id="app-config" type="application/json">${JSON.stringify(c).replace(/</g,'\\u003c')}</script><script type="module" src="./mobile.js"></script></body></html>`;}
+export function nativeHTML(config){const c=normalize(config);return `<!doctype html><html data-native lang="${c.lang}" dir="${c.lang==='en'?'ltr':'rtl'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(c.name)}</title><link rel="stylesheet" href="./font.css"><link rel="stylesheet" href="./mobile.css"><link rel="stylesheet" href="./scene.css"></head><body><main id="mobile-app"></main><script id="app-config" type="application/json">${JSON.stringify(c).replace(/</g,'\\u003c')}</script><script defer src="./mobile.js"></script></body></html>`;}
 function nativeMobileBundle(assets){
  const modules=['icons.js','catalog-media.js','scene.js','model.js','mobile.js'];
  return modules.map(file=>{
@@ -66,7 +66,7 @@ export async function buildAndroidAPK(config,assets,identity,{versionCode=Math.f
  const runtime=JSON.parse(assets['android-runtime.json']||'null');if(!runtime?.apk)throw Object.assign(new Error('موتور ساخت اندروید هنوز آماده نشده است.'),{status:503});const base=from64(runtime.apk);const actual=Array.from(await sha256(base),b=>b.toString(16).padStart(2,'0')).join('');if(actual!==runtime.sha256)throw new Error('Android runtime checksum failed');
  const c=normalize(config),files=zipEntries(base);files['AndroidManifest.xml']=patchManifest(files['AndroidManifest.xml'],{packageName:identity.packageName,label:(c.appName||c.name).slice(0,80),versionCode,versionName:'1.'+versionCode});
  for(const path of Object.keys(files))if(path.startsWith('META-INF/'))delete files[path];
- files['assets/index.html']=nativeHTML(c);for(const file of ['font.css','mobile.css','model.js','scene.js','catalog-media.js','scene.css','icons.js','icons-NOTICE.txt'])files['assets/'+file]=assets[file];files['assets/mobile.js']=nativeMobileBundle(assets).replaceAll('target="_blank"','target="_self"');
+ files['assets/index.html']=nativeHTML(c);for(const file of ['font.css','mobile.css','model.js','scene.js','catalog-media.js','scene.css','icons.js','icons-NOTICE.txt'])files['assets/'+file]=assets[file];const mobileJS=typeof runtime.mobileJS==='string'&&runtime.mobileJS.trim()?runtime.mobileJS:nativeMobileBundle(assets);files['assets/mobile.js']=mobileJS.replaceAll('target="_blank"','target="_self"');
  files['assets/template-media.svg']=androidEncoder.encode(assets['template-media.svg']||'');
  for(const path of Object.keys(files))if(/^res\/drawable[^/]*\/icon\.png$/.test(path))files[path]=(c.appIcon||c.logo).startsWith('data:image/png;base64,')?from64((c.appIcon||c.logo).split(',')[1]):appIcon(512,c.color);
  return signAndroidAPK(zipFiles(files,{align:4}),identity);
