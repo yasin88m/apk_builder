@@ -69,7 +69,7 @@ npm start
 
 ## استقرار و داده‌ها
 
-Cloudflare Worker مستقل `apk-builder` با دیتابیس D1 اختصاصی `apk-builder-data` اجرا می‌شود. تنظیمات غیرمحرمانه در `deployment/cloudflare.json` است. خروجی `npm run build` فایل ESM `dist/server/index.js` است و تمام دارایی‌های لازم را درون بسته دارد. برای حفاظت از هویت به‌روزرسانی اپ‌ها، از دیتابیس پایدار نسخه پشتیبان نگه دارید؛ هرگز کلیدهای امضای پروژه را داخل مخزن عمومی یا لاگ‌ها قرار ندهید.
+Cloudflare Worker مستقل `apk-builder` با دیتابیس D1 اختصاصی `apk-builder-data` اجرا می‌شود. تنظیمات Wrangler در `wrangler.jsonc`، ورودی Worker را روی `dist/server/index.js` قرار می‌دهد و دیتابیس را با binding برابر `DB` متصل می‌کند؛ فایل‌های `public/` توسط `scripts/build.mjs` داخل بسته Worker قرار می‌گیرند و نباید به‌عنوان یک سایت استاتیک جداگانه منتشر شوند. Workflow اندروید `public/android-runtime.json` را می‌سازد و آن را در مخزن ثبت می‌کند؛ این commit باید به Workers Builds برسد تا APK پایه و بسته JavaScript آفلاین جدید در Worker منتشر شوند. خروجی `npm run build` فایل ESM `dist/server/index.js` است و تمام دارایی‌های لازم را درون بسته دارد. برای حفاظت از هویت به‌روزرسانی اپ‌ها، از دیتابیس پایدار نسخه پشتیبان نگه دارید؛ هرگز کلیدهای امضای پروژه را داخل مخزن عمومی یا لاگ‌ها قرار ندهید.
 
 ## بررسی
 
