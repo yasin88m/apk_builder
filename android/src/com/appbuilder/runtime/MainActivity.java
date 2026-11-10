@@ -23,6 +23,7 @@ public class MainActivity extends Activity {
     private static final String HOST = "appassets.androidplatform.net";
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        android.util.Log.e("WebViewRuntime", "MainActivity onCreate");
         getWindow().setStatusBarColor(Color.rgb(20, 19, 30));
         getWindow().setNavigationBarColor(Color.rgb(20, 19, 30));
         view = new WebView(this);
