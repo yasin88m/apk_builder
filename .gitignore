@@ -6,3 +6,6 @@ node_modules/
 *.tar.gz
 .native-build/
 android/res/drawable/icon.png
+.wrangler/
+.dev.vars*
+!.dev.vars.example
