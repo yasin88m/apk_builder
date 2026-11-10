@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebChromeClient;
+import android.webkit.ConsoleMessage;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -57,6 +59,12 @@ public class MainActivity extends Activity {
                     try { startActivity(new Intent("tel".equals(scheme) ? Intent.ACTION_DIAL : Intent.ACTION_VIEW, uri)); }
                     catch (Exception e) { Toast.makeText(MainActivity.this, "برنامه مناسب برای باز کردن این لینک پیدا نشد.", Toast.LENGTH_SHORT).show(); }
                 }
+                return true;
+            }
+        });
+        view.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onConsoleMessage(ConsoleMessage message) {
+                android.util.Log.e("WebViewConsole", message.message() + " (line " + message.lineNumber() + " in " + message.sourceId() + ")");
                 return true;
             }
         });
