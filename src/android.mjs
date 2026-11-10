@@ -57,8 +57,8 @@ function nativeMobileBundle(assets){
   const source=assets[file];
   if(typeof source!=='string'||!source)throw new Error('Missing offline Android module: '+file);
   return source
-   .replace(/^import\s+.*?;\s*$/gm,'')
-   .replace(/^export\s*\{[^}]*\};?\s*$/gm,'')
+   .replace(/^\s*import\s+(?:[\s\S]*?\s+from\s+)?['"][^'"]+['"];?\s*$/gm,'')
+   .replace(/^\s*export\s*\{[\s\S]*?\};?\s*$/gm,'')
    .replace(/^export\s+(?=(?:const|let|var|function|async\s+function|class)\b)/gm,'');
  }).join('\n');
 }
