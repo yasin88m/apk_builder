@@ -42,14 +42,21 @@ public class MainActivity extends Activity {
                 if (path == null || path.contains("..") || !path.startsWith("/assets/")) return denied();
                 String filename = path.substring(8);
                 if (filename.isEmpty()) filename = "index.html";
-                String type = filename.endsWith(".js") ? "text/javascript" : filename.endsWith(".css") ? "text/css" : filename.endsWith(".json") ? "application/json" : filename.endsWith(".png") ? "image/png" : "text/html";
+                android.util.Log.i("WebViewRuntime", "Asset request: " + filename);
+                String type = filename.endsWith(".js") ? "text/javascript" : filename.endsWith(".css") ? "text/css" : filename.endsWith(".json") ? "application/json" : filename.endsWith(".png") ? "image/png" : filename.endsWith(".svg") ? "image/svg+xml" : "text/html";
                 try {
                     InputStream input = getAssets().open(filename);
                     HashMap<String, String> headers = new HashMap<>();
                     headers.put("X-Content-Type-Options", "nosniff");
                     headers.put("Cache-Control", "no-store");
                     return new WebResourceResponse(type, "UTF-8", 200, "OK", headers, input);
-                } catch (Exception e) { return denied(); }
+                } catch (Exception e) { android.util.Log.e("WebViewRuntime", "Asset not found: " + filename, e); return denied(); }
+            }
+            @Override public void onPageFinished(WebView w, String url) {
+                android.util.Log.i("WebViewRuntime", "Page finished: " + url);
+            }
+            @Override public void onReceivedError(WebView w, WebResourceRequest request, android.webkit.WebResourceError error) {
+                android.util.Log.e("WebViewRuntime", "Load error: " + request.getUrl() + " — " + error.getDescription());
             }
             @Override public boolean shouldOverrideUrlLoading(WebView w, WebResourceRequest request) {
                 Uri uri = request.getUrl();
