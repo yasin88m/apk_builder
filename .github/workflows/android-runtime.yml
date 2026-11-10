@@ -66,7 +66,7 @@ jobs:
           cp /tmp/verified-android-runtime.json public/android-runtime.json
           git add public/android-runtime.json
           git diff --cached --quiet && exit 0
-          git commit -m "Build compiled Android runtime [skip ci]"
+          git commit -m "Build compiled Android runtime"
           git push origin HEAD:main
       - uses: actions/upload-artifact@v4
         if: always()
