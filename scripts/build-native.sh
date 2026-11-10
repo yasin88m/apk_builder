@@ -14,7 +14,7 @@ JS
 "$build_tools/aapt2" link -o .native-build/linked.apk -I "$android_jar" --manifest android/AndroidManifest.xml --min-sdk-version 24 --target-sdk-version 34 .native-build/compiled.zip
 javac -source 8 -target 8 -classpath "$android_jar" -d .native-build/classes android/src/com/appbuilder/runtime/MainActivity.java
 "$build_tools/d8" --lib "$android_jar" --min-api 24 --output .native-build/dex .native-build/classes/com/appbuilder/runtime/*.class
-npx --yes esbuild@0.25.10 public/mobile.js --format=esm --target=chrome61 --outfile=.native-build/mobile.js
+npx --yes esbuild@0.25.10 public/mobile.js --bundle --format=iife --target=chrome61 --outfile=.native-build/mobile.js
 npx --yes esbuild@0.25.10 public/model.js --format=esm --target=chrome61 --outfile=.native-build/model.js
 python3 - <<'PY'
 import zipfile,hashlib,base64,json
