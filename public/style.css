@@ -17,3 +17,8 @@ body{overflow-x:clip}.hero>div{min-width:0}.hero{clip-path:inset(-10px -45px -10
 /* Fast original SVG artwork and responsive previews */
 .hero-art{position:relative;z-index:1;display:block;width:100%;height:100%;max-height:545px;object-fit:contain;filter:drop-shadow(0 28px 42px #0005)}.hero-stage .glass-tag{z-index:4}.mini-banner img{object-fit:cover;opacity:.92;mix-blend-mode:multiply}.mini-product img{height:78px;object-fit:cover;background:transparent}.mini-product{overflow:hidden}.mini-banner{isolation:isolate}.mini-banner strong,.mini-banner span{z-index:2}
 @media(max-width:900px){.hero-art{max-height:430px}.hero-stage{height:440px}}@media(max-width:560px){.hero-art{max-height:350px}.hero-stage{height:360px}}
+
+/* The homepage thumbnails are the actual packaged app renderer, not a second mock design. */
+.template-stage .phone{position:relative;overflow:hidden;border:6px solid #302d3a;border-radius:34px;background:#fff;box-shadow:0 18px 38px #0003;}
+.template-stage .phone .mini-preview{position:absolute;inset:0;width:390px;height:844px;border:0;transform:scale(.55);transform-origin:top right;pointer-events:none;background:white;}
+@media(max-width:760px){.template-stage .phone .mini-preview{transform:scale(.55);}}
