@@ -1,8 +1,22 @@
 import {demo,normalize,templates,resolveTemplate} from './model.js';
-import {sceneFromConfig,sceneThemeTokens,localizeCommerceProject} from './scene.js';
-export function prepareProject(config,{rebuild=false}={}){const c=localizeCommerceProject(normalize(config));if(rebuild||!c.scene?.enabled)c.scene=sceneFromConfig({...c,scene:null});return c;}
+import {sceneFromConfig,sceneThemeTokens,localizeCommerceProject,parseCommercePrice} from './scene.js';
+// Catalog content and the shared page design are independent. Keep item fields fresh
+// after loading and editing a custom design, without rebuilding its page layout.
+export function syncProjectCatalog(config){
+ const scene=config.scene;if(!scene?.enabled)return config;
+ const items=Array.isArray(config.items)?config.items:[];
+ scene.products=items.map(item=>({id:item.id,title:item.title,price:item.price,description:item.description,category:item.category,image:item.image,imageCrop:item.imageCrop||null}));
+ if(scene.commerce){
+  const oldProducts=new Map(scene.commerce.products.map(p=>[p.id,p]));
+  scene.commerce.products=items.map(item=>{const old=oldProducts.get(item.id)||{};return {...old,id:item.id,title:item.title,description:item.description,category:item.category,price:parseCommercePrice(item.price),image:item.image,imageCrop:item.imageCrop||null,brand:old.brand||'',stock:old.stock??15,rating:old.rating??4.5,sizes:old.sizes||[],colors:old.colors||[]};});
+  scene.commerce.currency=items.some(item=>String(item.price).includes('$'))?'USD':'IRT';
+ }
+ if(!items.some(p=>p.id===scene.activeProductId))scene.activeProductId=items[0]?.id||'';
+ return config;
+}
+export function prepareProject(config,{rebuild=false}={}){const c=localizeCommerceProject(normalize(config));if(rebuild||!c.scene?.enabled)c.scene=sceneFromConfig({...c,scene:null});return syncProjectCatalog(c);}
 export function selectProjectTemplate(config,id){const sample=demo(id);return prepareProject({...config,template:sample.template,color:sample.color,background:sample.background,ink:sample.ink,builder:{...config.builder,enabled:false},scene:null},{rebuild:true});}
-export function refreshTemplateProject(config){if(!config.scene||config.scene.origin==='template')config.scene=sceneFromConfig(config);return config;}
+export function refreshTemplateProject(config){if(!config.scene||config.scene.origin==='template')config.scene=sceneFromConfig(config);return syncProjectCatalog(config);}
 export function writeProjectTransfer(storage,config,{id=null,base=null}={}){const token=crypto.randomUUID();storage.setItem('studio-transfer:'+token,JSON.stringify({config,id,base,createdAt:Date.now()}));return token;}
 export function readProjectTransfer(storage,token,id=null){if(!/^[a-f\d-]{36}$/i.test(token||''))return null;try{const raw=storage.getItem('studio-transfer:'+token);if(!raw)return null;const data=JSON.parse(raw);if(data.id!==(id||null)||Date.now()-data.createdAt>3600000||!data.config)return null;return data;}catch{return null;}}
 export function chooseEditorProject({params,app=null,draft=null,studioDraft=null,transfer=null}){
