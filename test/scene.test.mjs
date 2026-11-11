@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {createSceneNode,normalizeScene,sceneFromConfig,renderScenePage,findSceneNode,moveSceneNode,cloneSceneNode,sceneDescendants} from '../public/scene.js';
+import {createSceneNode,normalizeScene,sceneFromConfig,renderScenePage,renderSceneNode,sceneLayoutStyle,sceneShapeKind,findSceneNode,moveSceneNode,cloneSceneNode,sceneDescendants} from '../public/scene.js';
 import {demo,normalize} from '../public/model.js';
 import {buildAndroidAPK,newAndroidIdentity,zipEntries} from '../src/android.mjs';
 const sample=()=>normalizeScene({enabled:true,pages:[{id:'home',name:'خانه',layout:'free',w:390,h:1200,children:[createSceneNode('section',{id:'section',layout:'grid',columns:3,w:900,h:500,fontSize:120,children:[createSceneNode('text',{id:'text',text:'متن مستقل',w:700,h:200,fontSize:120}),createSceneNode('button',{id:'button',text:'صفحه بعد',targetPage:'second'})]})]},{id:'second',name:'صفحه دوم',children:[]}]});
@@ -22,4 +22,62 @@ test('template artwork resolves to real product photo URLs and legacy sprite cro
  assert.equal(safeURL('catalog:shopcart/../x','image'),'');
  const old=normalize({...demo('brewbliss'),items:[{id:'4',title:'Chocolate Cake',image:'catalog:brewbliss',imageCrop:{x:402,y:894,w:194,h:163,sourceWidth:1024,sourceHeight:1536}}]});
  assert.equal(old.items[0].image,'catalog:brewbliss/chocolate-cake');assert.equal(old.items[0].imageCrop,null);
+});
+
+test('layout distribution modes survive normalization and render Flexbox and Grid spacing',()=>{
+ const normalized=normalizeScene({pages:[{id:'layout',name:'چیدمان',layout:'column',distribution:'space-evenly',w:390,h:800,children:[
+  createSceneNode('section',{id:'row',layout:'row',distribution:'space-around',w:300,h:160,children:[createSceneNode('text',{id:'first'}),createSceneNode('text',{id:'second'})]}),
+  createSceneNode('grid',{id:'grid',layout:'grid',distribution:'space-between',columns:2,w:300,h:240,children:[]})
+ ]}]});
+ const page=normalized.pages[0],row=findSceneNode(page,'row').node,grid=findSceneNode(page,'grid').node;
+ assert.equal(page.distribution,'space-evenly');
+ assert.equal(row.distribution,'space-around');
+ assert.equal(grid.distribution,'space-between');
+ assert.match(sceneLayoutStyle(row),/justify-content:space-around/);
+ assert.match(sceneLayoutStyle(grid),/justify-content:space-between/);
+ assert.match(sceneLayoutStyle(grid),/align-content:space-between/);
+ assert.match(renderScenePage(page),/justify-content:space-evenly/);
+});
+
+test('square, rectangle, circle, ellipse and line use distinct real geometry',()=>{
+ const shapes=[
+  createSceneNode('rectangle',{id:'square',name:'مربع',shapeKind:'square',w:120,h:70}),
+  createSceneNode('rectangle',{id:'rectangle',name:'مستطیل',shapeKind:'rectangle',w:210,h:90}),
+  createSceneNode('ellipse',{id:'circle',name:'دایره',shapeKind:'circle',w:100,h:55}),
+  createSceneNode('ellipse',{id:'ellipse',name:'بیضی',shapeKind:'ellipse',w:220,h:100}),
+  createSceneNode('line',{id:'line',name:'خط',shapeKind:'line',w:200,h:2,stroke:'#ff0000',strokeWidth:4})
+ ];
+ const page=normalizeScene({pages:[{id:'shapes',name:'اشکال',layout:'free',w:390,h:800,children:shapes}]}).pages[0];
+ const get=id=>findSceneNode(page,id).node;
+ assert.equal(get('square').h,get('square').w);
+ assert.equal(get('circle').h,get('circle').w);
+ const style=id=>renderSceneNode(get(id),'free',true);
+ assert.match(style('square'),/data-shape-kind="square"/);
+ assert.match(style('square'),/aspect-ratio:1 \/ 1/);
+ assert.match(style('square'),/border-radius:0px/);
+ assert.match(style('rectangle'),/width:210px/);
+ assert.match(style('rectangle'),/height:90px/);
+ assert.match(style('rectangle'),/border-radius:0px/);
+ assert.match(style('circle'),/data-shape-kind="circle"/);
+ assert.match(style('circle'),/aspect-ratio:1 \/ 1/);
+ assert.match(style('circle'),/border-radius:50%/);
+ assert.match(style('ellipse'),/width:220px/);
+ assert.match(style('ellipse'),/height:100px/);
+ assert.match(style('ellipse'),/border-radius:50%/);
+ assert.match(style('line'),/background-color:#ff0000/);
+ assert.match(style('line'),/border:0/);
+ assert.match(style('line'),/height:4px/);
+ assert.equal(sceneShapeKind({type:'rectangle',name:'مربع',w:100,h:80}),'square');
+ assert.equal(sceneShapeKind({type:'ellipse',name:'بیضی',w:200,h:80}),'ellipse');
+});
+
+test('numeric property fields include accessible increment and decrement buttons',async()=>{
+ const studio=await readFile(new URL('../public/studio.js',import.meta.url),'utf8');
+ const styles=await readFile(new URL('../public/studio.css',import.meta.url),'utf8');
+ assert.match(studio,/data-step-property=/);
+ assert.match(studio,/data-step-direction="1"/);
+ assert.match(studio,/data-step-direction="-1"/);
+ assert.match(studio,/key==='iconStroke'\?0\.5:1/);
+ assert.match(styles,/\.ds-number-control/);
+ assert.match(styles,/\.ds-number-buttons/);
 });
